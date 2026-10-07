@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>自拍洩密</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&amp;family=Noto+Sans+TC:wght@500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0a0e0d;--panel:#121a17;--card:#151c19;--line:#24312c;--line2:#3a4c44;--fg:#e8eee9;--mute:#9db0a6;--green:#5CF2A0;--amber:#FFB547;--red:#FF5A4E;--gray:#8a9690}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:'Noto Sans TC',sans-serif;-webkit-tap-highlight-color:transparent}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+#app{position:relative;max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);flex:none}
+.top .t1{font-size:19px;font-weight:900;letter-spacing:1px}
+.top .t2{font-size:14px;font-weight:700;color:var(--mute)}
+#timer{font-size:28px;font-weight:700;color:var(--amber)}
+#timer.low{color:var(--red)}
+.scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:12px}
+.post{margin:10px 14px 0;background:var(--card);border:1px solid #2a3631}
+.ph{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.av{width:40px;height:40px;border-radius:50%;background:var(--line2) center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex:none}
+.ph .n{font-size:16px;font-weight:900}
+.ph .m{font-size:14px;font-weight:500;color:var(--mute)}
+.pwrap{position:relative}
+#photo{display:block;width:100%;aspect-ratio:4/3;touch-action:none;cursor:crosshair}
+.ptool{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#0f1513;border-bottom:1px solid #2a3631}
+.pbtn{min-height:40px;min-width:44px;padding:0 10px;background:#1b2421;border:1px solid var(--line2);color:#fff;font-family:inherit;font-size:15px;font-weight:900;cursor:pointer}
+#prevBtn,#nextPBtn{font-size:20px}
+#pageTag{font-size:15px;font-weight:900;min-width:40px;text-align:center}
+.ptool .sp{flex:1}
+#zoomHint{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.62);padding:4px 8px;font-size:13px;font-weight:700;color:#ddd;pointer-events:none}
+.info{margin:0;padding:8px 12px;background:#0f1513;border-bottom:1px solid #2a3631;font-size:15px;font-weight:700}
+.info div{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed #2a3631}
+.info div:last-child{border-bottom:0}
+.info .k{color:var(--mute)}
+.cap{padding:10px 12px 4px;font-size:17px;font-weight:700;line-height:1.55}
+.likes{padding:0 12px 8px;font-size:14px;font-weight:700;color:var(--mute)}
+.cmts{padding:6px 12px 10px;border-top:1px solid #2a3631;display:flex;flex-direction:column;gap:8px}
+.cmt{font-size:15px;font-weight:700;line-height:1.55;color:#cfd8d3}
+.cmt b{color:var(--fg);margin-right:6px}
+.clue,.decoy{cursor:pointer;padding:0 1px}
+.clue.found{background:rgba(255,181,71,.18);border-bottom:2px solid var(--amber);color:var(--amber)}
+.decoy.seen{background:rgba(138,150,144,.15);border-bottom:2px solid var(--gray);color:#b9c4be}
+.clue.missed{border-bottom:2px solid var(--red);color:var(--red)}
+.compose{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-top:1px solid #2a3631;font-size:16px;font-weight:700}
+.tog{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border:2px solid var(--line2);border-radius:20px}
+.tog i{width:30px;height:16px;border-radius:9px;background:var(--green);position:relative}
+.tog i::after{content:'';position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#0a0e0d}
+.bottom{flex:none;padding:10px 16px calc(10px + env(safe-area-inset-bottom));border-top:2px solid var(--line);background:#0d1311;display:flex;flex-direction:column;gap:6px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.task{font-size:16px;font-weight:900}
+.dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.dots span{width:14px;height:14px;border:2px solid var(--line2)}
+.dots span.on{background:var(--amber);border-color:var(--amber)}
+#map{display:block;width:100%;height:clamp(64px,11dvh,120px)}
+.range{font-size:16px;font-weight:900}
+.range .lbl{font-size:14px;font-weight:700;color:var(--mute)}
+.exp{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:#17140d;border:2px solid var(--amber);padding:12px 14px;transform:translateY(140%);transition:transform .25s;cursor:pointer}
+.exp.on{transform:none}
+.exp.dec{background:#141917;border-color:var(--gray)}
+.exp .h{font-size:18px;font-weight:900;color:var(--amber)}
+.exp.dec .h{color:#c3cdc8}
+.exp .b{font-size:16px;font-weight:700;line-height:1.6;margin-top:4px}
+.toast{position:absolute;left:50%;top:68px;transform:translateX(-50%);background:rgba(0,0,0,.88);border:2px solid var(--red);padding:8px 14px;font-size:16px;font-weight:900;z-index:20;pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap}
+.toast.on{opacity:1}
+.modal{position:absolute;inset:0;background:var(--bg);z-index:30;display:none;flex-direction:column;padding:22px 18px calc(22px + env(safe-area-inset-bottom));overflow:auto}
+.modal.on{display:flex}
+.modal h1{font-size:32px;font-weight:900;margin:6px 0;letter-spacing:2px}
+.modal h2{font-size:22px;font-weight:900;margin:10px 0 4px}
+.modal p{font-size:17px;font-weight:700;line-height:1.65;margin:6px 0}
+.m{color:var(--mute)}
+.lbl{font-size:14px;font-weight:700;color:var(--mute)}
+.btn{min-height:54px;background:var(--amber);color:#141008;border:0;font-family:inherit;font-size:19px;font-weight:900;cursor:pointer;margin-top:16px;width:100%;flex:none}
+.clist{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.clist div{border:1px solid var(--line2);padding:10px 12px;font-size:15px;font-weight:700;line-height:1.6;color:var(--mute)}
+.clist b{display:block;font-size:17px;font-weight:900;color:var(--fg)}
+.clist .ok b{color:var(--amber)}
+.clist .no b{color:var(--red)}
+#bigmap{display:block;width:100%;height:170px;border:1px solid var(--line2);margin:8px 0;flex:none}
+.stat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}
+.stat div{background:var(--panel);border:1px solid var(--line);padding:8px 10px;font-size:14px;font-weight:700;color:var(--mute)}
+.stat b{display:block;font-size:24px;color:var(--fg)}
+.rules{display:flex;flex-direction:column;gap:8px;margin:6px 0}
+.rules div{padding:10px 12px;background:var(--panel);border:1px solid var(--line);font-size:16px;font-weight:700;line-height:1.55}
+.rules b{color:var(--amber)}
+.case{font-size:15px;font-weight:700;line-height:1.65;color:var(--mute);border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.case b{color:var(--fg);font-size:16px}
+.legend{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.legend div{border:1px solid var(--line2);padding:8px 10px;font-size:15px;font-weight:700;line-height:1.5;color:var(--mute)}
+.legend b{color:var(--fg)}
+button:focus-visible,.clue:focus-visible,.decoy:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+#aiAnim{height:100%}
+
+/* ═══ 第七則：交給 AI ═══ */
+.ai{--cyan:#4FD8FF;--cyan2:#1d6f8a;padding:0;background:#05090b}
+.ai .sec{display:none;flex-direction:column;min-height:100%}
+.ai .sec.on{display:flex}
+.aiPad{padding:22px 18px calc(22px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.aiMsg{border:2px solid var(--cyan2);background:#081419;padding:16px;display:flex;flex-direction:column;gap:8px}
+.aiMsg .from{font-size:14px;font-weight:900;color:var(--cyan);letter-spacing:1px}
+.aiMsg .big{font-size:24px;font-weight:900;line-height:1.45}
+.aiMsg .big b{color:var(--amber)}
+.aiBtn{min-height:54px;background:var(--cyan);color:#03141b;border:0;font-family:inherit;font-size:19px;font-weight:900;cursor:pointer;width:100%;margin-top:8px}
+.aiBtn.ghost{background:transparent;border:2px solid var(--cyan);color:var(--cyan)}
+#aiAnim{position:relative;height:100%}
+#aiC{position:absolute;inset:0;width:100%;height:100%;display:block}
+#aiSkip{position:absolute;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:2;padding:8px 14px;background:rgba(5,9,11,.7);border:2px solid var(--cyan2);color:var(--cyan);font-family:inherit;font-size:15px;font-weight:900;cursor:pointer}
+#aiGo{position:absolute;left:18px;right:18px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:2;display:none}
+#aiGo.on{display:block}
+/* 審核 */
+.rvHead{position:sticky;top:0;z-index:3;background:#05090b;border-bottom:2px solid var(--cyan2);padding:12px 16px 10px}
+.rvHead .row{align-items:flex-start}
+.rvT1{font-size:20px;font-weight:900;color:var(--cyan)}
+.rvT2{font-size:14px;font-weight:700;color:var(--mute);margin-top:2px;line-height:1.45}
+#rvTimer{font-size:34px;font-weight:700;color:var(--amber);line-height:1}
+#rvTimer.low{color:var(--red)}
+#rvProg{font-size:14px;font-weight:700;color:var(--mute);text-align:right;margin-top:4px}
+#rvList{display:flex;flex-direction:column;gap:8px;padding:10px 12px 110px}
+.pc{border:1px solid #1f3640;background:#0a1418;padding:10px 12px}
+.pc .top1{display:flex;align-items:center;gap:10px;cursor:pointer}
+.pc .sil{width:40px;height:40px;border-radius:50%;background:#14262e;flex:none;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.pc .nm{flex:1;min-width:0}
+.pc .nm b{display:block;font-size:17px;font-weight:900}
+.pc .nm span{display:block;font-size:14px;font-weight:700;color:#a9c4cf;line-height:1.45}
+.pc .sc{text-align:right;flex:none}
+.pc .sc b{display:block;font-size:24px;font-weight:700;color:var(--cyan);line-height:1}
+.pc .sc i{display:block;width:54px;height:5px;background:#14262e;margin-top:5px}
+.pc .sc i em{display:block;height:100%;background:var(--cyan)}
+.pc .ev{display:none;margin-top:8px;padding:8px 10px;border-left:3px solid var(--cyan2);font-size:15px;font-weight:700;line-height:1.55;color:#cfe3ea}
+.pc.open .ev{display:block}
+.pc .acts{display:flex;gap:8px;margin-top:8px}
+.pc .acts button{flex:1;min-height:44px;font-family:inherit;font-size:16px;font-weight:900;cursor:pointer;border:2px solid var(--line2);background:#111c1f;color:#fff}
+.pc .acts .ok{border-color:#7a5a1f;color:var(--amber)}
+.pc.done{opacity:.55;padding:8px 12px}
+.pc.done .acts,.pc.done .ev{display:none}
+.pc .st{display:none;font-size:14px;font-weight:900;flex:none}
+.pc.done .st{display:block}
+.pc.done.y .st{color:var(--amber)}
+.pc.done.n .st{color:#9ab}
+.rvFoot{position:sticky;bottom:0;z-index:3;background:linear-gradient(transparent,#05090b 30%);padding:18px 12px calc(12px + env(safe-area-inset-bottom));margin-top:-110px}
+#rvAll{min-height:52px;width:100%;background:#1a2a30;border:2px solid var(--cyan2);color:var(--cyan);font-family:inherit;font-size:17px;font-weight:900;cursor:pointer}
+/* 揭曉 */
+.rvl .stat div{background:#0a1418;border-color:#1f3640}
+.who{border:1px solid #3a2a22;background:#120d0b;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.who b{font-size:17px;font-weight:900}
+.who .why{font-size:14px;font-weight:700;color:#a9c4cf;line-height:1.5}
+.who .real{font-size:16px;font-weight:900;color:var(--amber);line-height:1.5}
+.punch{font-size:23px;font-weight:900;line-height:1.45;color:var(--cyan);margin-top:6px}
+.punch b{color:var(--amber)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top"><div><div class="t1" id="hTitle">情報分析</div><div class="t2" id="hSub">第 1 則／共 6 則</div></div><div class="mono" id="timer">60</div></div>
+  <div class="scroll" id="scroll">
+    <div class="post" id="post">
+      <div class="ph"><div class="av" id="pAv">傑</div><div><div class="n" id="pName"></div><div class="m" id="pMeta"></div></div></div>
+      <div class="pwrap">
+        <canvas id="photo" aria-label="貼文照片，點出洩漏位置的線索"></canvas>
+        <div id="zoomHint">可用兩指縮放、拖曳移動</div>
+      </div>
+      <div class="ptool"><button type="button" class="pbtn" id="prevBtn" aria-label="上一張">‹</button><span id="pageTag" class="mono"></span><button type="button" class="pbtn" id="nextPBtn" aria-label="下一張">›</button><span class="sp"></span><button type="button" class="pbtn" id="infoBtn">照片資訊</button><button type="button" class="pbtn" id="zoomBtn">放大</button></div>
+      <div class="info" id="info" hidden></div>
+      <div class="cap" id="pCap"></div>
+      <div id="pFoot"></div>
+      <div class="cmts" id="cmts" hidden></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="row"><div class="task" id="task">點出能找出位置的線索</div><div class="dots" id="dots"></div></div>
+    <canvas id="map"></canvas>
+    <div class="row"><span class="range"><span class="lbl">可能範圍　</span><span id="rangeTxt">半徑 30 公里</span></span><span class="lbl">點錯照片扣 3 秒</span></div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <div class="exp" id="exp"><div class="h" id="expH"></div><div class="b" id="expB"></div></div>
+
+  <div class="modal on" id="mStart">
+    <div class="lbl">任務簡報</div>
+    <h1>自拍洩密</h1>
+    <p>你是對方的情報分析員。你手上唯一的工具，是別人公開發在網路上的貼文。</p>
+    <div class="legend">
+      <div><b>照片：</b>可以放大、左右滑看下一張。路牌、招牌上的小字要放大才看得清楚。</div>
+      <div><b>照片資訊與留言：</b>拍攝資料和朋友的留言，也可能藏著線索。</div>
+      <div><b>真線索與假線索：</b>有些東西看起來可疑，其實全國到處都有。點到假線索不扣秒，但找不到位置。</div>
+    </div>
+    <p class="m">每找到一個真線索，地圖上的範圍就縮小一次。點錯照片扣 3 秒。一共六則，最後一則換成你自己準備要發的貼文。</p>
+    <p class="m" style="font-size:15px">貼文、人物、地名與部隊都是虛構的。</p>
+    <button type="button" class="btn" id="startBtn">開始分析</button>
+  </div>
+  <div class="modal" id="mResult"></div>
+  <div class="modal" id="mEnd"></div>
+  <div class="modal ai" id="mAI">
+    <div class="sec" id="aiIntro"><div class="aiPad" style="margin:auto 0">
+      <div class="lbl" style="color:var(--cyan)">第 7 則・交給 AI</div>
+      <div class="aiMsg"><div class="from">指揮部訊息</div><div class="big">你花了 <b id="aiSpent">7 分 42 秒</b>，<br>確認了一個人的位置。</div><div class="big">全市有 <b>12 萬</b>個帳號。<br>我們沒有時間了。</div></div>
+      <button type="button" class="aiBtn" id="aiStart">交給 AI 分析員</button>
+    </div></div>
+    <div class="sec" id="aiAnim"><canvas id="aiC" aria-label="AI 分析動畫"></canvas><button type="button" id="aiSkip">跳過動畫</button><button type="button" class="aiBtn" id="aiGo">開始審核名單（60 秒）</button></div>
+    <div class="sec" id="aiReview">
+      <div class="rvHead"><div class="row"><div><div class="rvT1">優先監控名單・人工審核</div><div class="rvT2">點名字看依據，逐一確認或剔除。<br>時間到時，還沒審核的人由系統自動送出。</div></div><div><div id="rvTimer" class="mono">60</div><div id="rvProg">已審核 0／37</div></div></div></div>
+      <div id="rvList"></div>
+      <div class="rvFoot"><button type="button" id="rvAll">剩下的全部確認並送出</button></div>
+    </div>
+    <div class="sec rvl" id="aiReveal"><div class="aiPad">
+      <div class="lbl" style="color:var(--cyan)">第 7 則・結果</div>
+      <h1>名單已送出</h1>
+      <div class="stat" id="rvStats"></div>
+      <div id="rvStop" style="font-size:16px;font-weight:900;color:#9fd8b8"></div>
+      <div id="rvWho" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div class="punch">AI 找得比你快<b>一萬倍</b>。<br>錯的時候，也快一萬倍。</div>
+      <button type="button" class="btn" id="aiEnd">看總結</button>
+    </div></div>
+  </div>
+</div>
+
+<script>
+const AVATAR='data:image/jpeg;base64,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';
+/* ═══ 工具 ═══ */
+function rng(seed){let s=seed;return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646}}
+const PW=400,PH=300;const $=id=>document.getElementById(id);
+function grainCanvas(){const c=document.createElement('canvas');c.width=200;c.height=150;const x=c.getContext('2d'),d=x.createImageData(200,150),r=rng(5);for(let i=0;i<d.data.length;i+=4){const v=Math.floor(r()*255);d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}x.putImageData(d,0,0);return c}
+const GRAIN=grainCanvas();
+function finish(c,amt,vig){amt=Math.min(amt,.05);vig=Math.min(vig,.3);c.save();c.globalAlpha=amt;c.globalCompositeOperation='overlay';c.drawImage(GRAIN,0,0,PW,PH);c.restore();
+  const g=c.createRadialGradient(PW/2,PH/2,PH*0.35,PW/2,PH/2,PH*0.85);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${vig})`);c.fillStyle=g;c.fillRect(0,0,PW,PH)}
+function glow(c,x,y,r,col,a){const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,7);c.fill()}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function txt(c,s,x,y,size,col,align,weight){c.font=`${weight||900} ${size}px 'Noto Sans TC',sans-serif`;c.textAlign=align||'left';c.fillStyle=col;c.fillText(s,x,y)}
+function camo(c,x,y,w,h,seed,cols){const r=rng(seed);c.save();c.beginPath();c.rect(x,y,w,h);c.clip();c.fillStyle=cols[0];c.fillRect(x,y,w,h);for(let i=0;i<w*h/40;i++){c.fillStyle=cols[1+Math.floor(r()*(cols.length-1))];c.fillRect(x+r()*w,y+r()*h,3+r()*7,2+r()*5)}c.restore()}
+function scooter(c,x,y,col){c.fillStyle='#0c0c10';c.beginPath();c.arc(x,y,4,0,7);c.arc(x+20,y,4,0,7);c.fill();c.fillStyle=col;c.beginPath();c.moveTo(x-2,y-3);c.lineTo(x+4,y-12);c.lineTo(x+18,y-12);c.lineTo(x+23,y-4);c.lineTo(x+16,y-2);c.closePath();c.fill();c.fillStyle='#0c0c10';c.fillRect(x+3,y-17,2,6);c.fillRect(x+1,y-18,7,2);glow(c,x+22,y-6,5,'255,60,40',.75)}
+
+/* ═══ 第 1 則（豐富版）的兩張照片 ═══ */
+/* ═══ 第 2–6 則的照片 ═══ */
+function sky(c,top,bot,h){const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,top);g.addColorStop(1,bot);c.fillStyle=g;c.fillRect(0,0,PW,h)}
+function tree(c,x,y,s,col){c.fillStyle='#2b2016';c.fillRect(x-1.5*s,y-8*s,3*s,10*s);c.fillStyle=col;c.beginPath();c.arc(x,y-12*s,7*s,0,7);c.arc(x-5*s,y-8*s,5*s,0,7);c.arc(x+5*s,y-8*s,5*s,0,7);c.fill()}
+
+function drawP2a(c){
+  c.fillStyle='#e7eae3';c.fillRect(0,0,PW,PH);
+  c.fillStyle='#cfe3c4';c.fillRect(0,0,70,120);c.fillRect(330,150,70,90);
+  for(const [x,y] of [[18,30],[44,62],[24,92],[350,176],[372,206]]){c.fillStyle='#9cc58a';c.beginPath();c.arc(x,y,7,0,7);c.fill()}
+  c.fillStyle='#bcd9f0';c.beginPath();c.ellipse(40,44,16,9,0,0,7);c.fill();
+  c.strokeStyle='#ffffff';c.lineWidth=7;for(const y of [36,236]){c.beginPath();c.moveTo(0,y);c.lineTo(PW,y+4);c.stroke()}for(const x of [80,330]){c.beginPath();c.moveTo(x,0);c.lineTo(x+6,PH);c.stroke()}
+  c.lineWidth=3;for(const y of [90,150,190]){c.beginPath();c.moveTo(0,y);c.lineTo(80,y);c.stroke();c.beginPath();c.moveTo(330,y+6);c.lineTo(PW,y+6);c.stroke()}
+  for(let i=0;i<5;i++){c.fillStyle='#dcdfd7';c.fillRect(6+i*14,128+i*3,10,8);c.fillRect(338,48+i*16,12,10);c.fillRect(358,52+i*16,10,9)}
+  c.fillStyle='#d9dcd4';c.fillRect(108,64,192,144);
+  for(let i=0;i<4;i++)for(let j=0;j<2;j++){c.fillStyle='#bfc3b9';c.fillRect(124+i*30,76+j*28,22,16)}
+  c.strokeStyle='#c4c8bd';c.lineWidth=8;c.beginPath();c.ellipse(240,160,40,24,0,0,7);c.stroke();
+  c.strokeStyle='#8d9288';c.lineWidth=1.5;c.setLineDash([4,3]);c.strokeRect(108,64,192,144);c.setLineDash([]);
+  txt(c,'興安路',150,251,7,'#6f766f','center',700);
+  c.strokeStyle='#ff7a1a';c.lineWidth=4;c.lineJoin='round';c.beginPath();c.moveTo(206,214);c.lineTo(104,212);c.lineTo(102,60);c.lineTo(306,58);c.lineTo(305,212);c.lineTo(212,215);c.stroke();
+  c.strokeStyle='rgba(255,122,26,.5)';c.lineWidth=3;c.beginPath();c.moveTo(206,218);c.lineTo(100,216);c.lineTo(98,56);c.lineTo(310,54);c.lineTo(309,216);c.lineTo(212,219);c.stroke();
+  c.fillStyle='#1f9d55';c.beginPath();c.arc(206,215,7,0,7);c.fill();c.strokeStyle='#fff';c.lineWidth=2;c.stroke();
+  rr(c,330,8,62,22,11);c.fillStyle='rgba(255,255,255,.92)';c.fill();txt(c,'晴　24°C',361,23,9,'#4a524c','center',700);
+  c.fillStyle='#ffffff';c.fillRect(0,256,PW,44);c.fillStyle='#e0e3dc';c.fillRect(0,256,PW,1);
+  txt(c,'晨跑',14,274,13,'#1d2420','left');txt(c,'5.2 公里　28 分 14 秒',14,293,12,'#4a524c','left',700);
+  rr(c,318,266,64,24,12);c.fillStyle='#e9f6ee';c.fill();c.strokeStyle='#1f9d55';c.lineWidth=1.5;c.stroke();txt(c,'公開',350,283,13,'#1a7a44','center');
+  finish(c,.05,.12)}
+function drawP5a(c){
+  sky(c,'#a9b8c6','#dfe2dc',150);
+  c.fillStyle='#9aa39a';c.fillRect(0,110,PW,40);c.fillStyle='#b9bdb6';c.fillRect(0,128,PW,22);
+  c.fillStyle='#6e746f';c.fillRect(0,104,PW,8);for(let x=20;x<PW;x+=90){c.fillStyle='#5a605b';c.fillRect(x,30,6,80)}c.fillStyle='#5a605b';c.fillRect(0,26,PW,8);
+  rr(c,166,54,108,40,3);c.fillStyle='#f4f6f2';c.fill();c.strokeStyle='#1f3c73';c.lineWidth=2.5;c.stroke();c.fillStyle='#1f3c73';c.fillRect(166,86,108,8);
+  txt(c,'海豐',220,80,22,'#1d2430','center');txt(c,'←北港　　南嶺→',220,92.5,6,'#f4f6f2','center',700);
+  c.fillStyle='#e8e8e2';c.beginPath();c.arc(70,62,11,0,7);c.fill();c.strokeStyle='#333';c.lineWidth=1.5;c.stroke();c.beginPath();c.moveTo(70,62);c.lineTo(70,55);c.moveTo(70,62);c.lineTo(76,64);c.stroke();
+  c.fillStyle='#c0392b';c.fillRect(318,70,26,40);c.fillStyle='#ddd';c.fillRect(322,76,18,14);c.fillStyle='#333';c.fillRect(322,94,18,4);
+  c.fillStyle='#575c58';c.fillRect(0,150,PW,8);c.fillStyle='#3f4340';c.fillRect(0,206,PW,10);
+  for(let i=0;i<3;i++){const x=40+i*112;c.fillStyle='#4b4f4b';c.fillRect(x,196,104,10);c.fillStyle='#262826';for(const wx of [x+14,x+90]){c.beginPath();c.arc(wx,210,7,0,7);c.fill()}
+    c.fillStyle='#4f5a3c';c.fillRect(x+8,168,74,28);c.fillRect(x+80,176,18,20);c.fillStyle='#3d4630';c.fillRect(x+8,164,74,6);c.fillStyle='#8fa0a8';c.fillRect(x+84,179,10,8);
+    c.fillStyle='#1c1e1b';for(const wx of [x+22,x+50,x+88]){c.beginPath();c.arc(wx,198,6,0,7);c.fill()}}
+  c.fillStyle='#6f756d';c.fillRect(0,216,PW,30);
+  c.fillStyle='#22262a';c.beginPath();c.rect(0,0,PW,PH);{const x=24,y=20,w=352,h=236,q=22;c.moveTo(x+q,y);c.arcTo(x+w,y,x+w,y+h,q);c.arcTo(x+w,y+h,x,y+h,q);c.arcTo(x,y+h,x,y,q);c.arcTo(x,y,x+w,y,q);c.closePath()}c.fill('evenodd');
+  c.fillStyle='rgba(255,255,255,.06)';c.beginPath();c.moveTo(60,20);c.lineTo(120,20);c.lineTo(40,256);c.lineTo(24,256);c.fill();
+  c.fillStyle='#33383d';c.fillRect(0,262,PW,38);
+  finish(c,.1,.35)}
+function drawP6a(c){const r=rng(73);
+  const g=c.createLinearGradient(0,0,0,170);g.addColorStop(0,'#3b2f5c');g.addColorStop(.6,'#c0607a');g.addColorStop(1,'#f3a15b');c.fillStyle=g;c.fillRect(0,0,PW,PH);
+  glow(c,150,160,80,'255,210,140',.55);c.fillStyle='#ffe2a6';c.beginPath();c.arc(150,160,20,Math.PI,0);c.fill();
+  const s=c.createLinearGradient(0,160,0,PH);s.addColorStop(0,'#e0886a');s.addColorStop(1,'#2a2a4a');c.fillStyle=s;c.fillRect(0,160,PW,PH-160);
+  c.fillStyle='rgba(255,226,166,.55)';for(let i=0;i<8;i++)c.fillRect(130+Math.sin(i)*10,166+i*9,40-i*3,2);
+  c.fillStyle='#2a2238';c.beginPath();c.moveTo(40,186);c.lineTo(66,186);c.lineTo(62,192);c.lineTo(44,192);c.fill();c.fillRect(52,176,2,10);c.beginPath();c.moveTo(80,200);c.lineTo(98,200);c.lineTo(95,204);c.lineTo(83,204);c.fill();
+  c.strokeStyle='#2a2238';c.lineWidth=1.2;for(const [x,y] of [[60,60],[74,52],[90,66]]){c.beginPath();c.moveTo(x-5,y);c.quadraticCurveTo(x-2,y-4,x,y);c.quadraticCurveTo(x+2,y-4,x+5,y);c.stroke()}
+  c.fillStyle='#1d1a2a';c.beginPath();c.moveTo(220,PH);c.quadraticCurveTo(250,170,290,140);c.quadraticCurveTo(340,120,PW,130);c.lineTo(PW,PH);c.fill();
+  c.fillStyle='#d9d6de';c.fillRect(318,108,24,30);const dg=c.createRadialGradient(322,86,4,330,98,32);dg.addColorStop(0,'#ffffff');dg.addColorStop(1,'#a9a3b8');c.fillStyle=dg;c.beginPath();c.arc(330,98,26,0,7);c.fill();
+  c.strokeStyle='rgba(120,110,140,.5)';c.lineWidth=1;for(let i=-2;i<=2;i++){c.beginPath();c.ellipse(330,98,26,Math.abs(i)*9+2,0,0,7);c.stroke()}
+  c.strokeStyle='#2c2838';c.lineWidth=1.5;for(let x=264;x<PW;x+=14){c.beginPath();c.moveTo(x,154-(x-264)*0.1);c.lineTo(x,172-(x-264)*0.1);c.stroke()}c.beginPath();c.moveTo(264,156);c.lineTo(PW,142);c.stroke();
+  c.fillStyle='#e8e4dc';c.fillRect(270,160,40,16);c.strokeStyle='#c0392b';c.lineWidth=1;c.strokeRect(271,161,38,14);txt(c,'軍事管制區',290,167,5,'#c0392b','center');txt(c,'禁止攝影',290,173.5,5,'#c0392b','center');
+  c.fillStyle='#120f1a';c.fillRect(0,270,PW,30);c.fillRect(0,262,140,10);
+  finish(c,.1,.4)}
+/* ═══ 重繪版照片（V3：清楚易辨識） ═══ */
+function outline(c,col,w){c.strokeStyle=col;c.lineWidth=w||1;c.stroke()}
+function win(c,x,y,w,h,lit){c.fillStyle='#e6e1d6';c.fillRect(x-1.5,y-1.5,w+3,h+3);c.fillStyle=lit?'#f5d99a':'#56637a';c.fillRect(x,y,w,h);c.fillStyle='rgba(255,255,255,.18)';c.fillRect(x,y,w,h*0.35);c.fillStyle='#e6e1d6';c.fillRect(x+w/2-0.7,y,1.4,h)}
+function acUnit(c,x,y){c.fillStyle='#e4e4e0';c.fillRect(x,y,18,11);c.strokeStyle='#9a9a94';c.lineWidth=.6;for(let i=0;i<4;i++){c.beginPath();c.moveTo(x+2,y+2+i*2.4);c.lineTo(x+11,y+2+i*2.4);c.stroke()}c.beginPath();c.arc(x+14,y+5.5,3,0,7);c.stroke()}
+function shophouse(c,x,w,top,base,col,seed){const r=rng(seed);c.fillStyle=col;c.fillRect(x,top,w,base-top);c.fillStyle='rgba(0,0,0,.12)';c.fillRect(x+w-4,top,4,base-top);c.fillStyle='rgba(255,255,255,.25)';c.fillRect(x,top,w,3)}
+function helmet(c,x,y,s){c.save();c.translate(x,y);c.scale(s,s);c.fillStyle='#55603f';c.beginPath();c.moveTo(-26,6);c.quadraticCurveTo(-26,-22,0,-24);c.quadraticCurveTo(26,-22,27,2);c.lineTo(31,8);c.lineTo(-29,8);c.closePath();c.fill();outline(c,'#2f3624',1.2);
+  c.fillStyle='#3f4830';for(const [a,b] of [[-14,-10],[4,-16],[12,-4],[-4,0],[18,-12]]){c.beginPath();c.ellipse(a,b,5,3,0.4,0,7);c.fill()}c.fillStyle='rgba(255,255,255,.18)';c.beginPath();c.ellipse(-8,-16,10,4,-0.4,0,7);c.fill();c.restore()}
+
+function drawP1a(c){const r=rng(11);
+  const g=c.createLinearGradient(0,0,0,160);g.addColorStop(0,'#22305a');g.addColorStop(.6,'#4b5c8c');g.addColorStop(1,'#a497b4');c.fillStyle=g;c.fillRect(0,0,PW,170);
+  glow(c,344,30,22,'240,240,220',.35);c.fillStyle='#f4f1df';c.beginPath();c.arc(344,30,8,0,7);c.fill();
+  c.fillStyle='#38426a';for(const [x,y,w] of [[0,118,40],[36,104,46],[150,110,40],[186,96,50],[250,112,44],[300,100,46],[350,116,50]]){c.fillRect(x,y,w,60);for(let i=0;i<6;i++)if(r()<.6){c.fillStyle='rgba(255,214,150,.7)';c.fillRect(x+4+Math.floor(r()*(w-8)/8)*8,y+6+Math.floor(r()*5)*9,4,4);c.fillStyle='#38426a'}}
+  c.strokeStyle='#2a2f45';c.lineWidth=2;c.beginPath();c.moveTo(108,160);c.lineTo(117,22);c.moveTo(132,160);c.lineTo(123,22);c.stroke();
+  c.lineWidth=1;for(let i=0;i<9;i++){const y0=160-i*15,y1=y0-15,a=(y0-22)/138,b=(y1-22)/138;c.beginPath();c.moveTo(117-9*a,y0);c.lineTo(123+9*b,y1);c.moveTo(123+9*a,y0);c.lineTo(117-9*b,y1);c.stroke()}
+  c.fillStyle='#2a2f45';c.fillRect(110,58,20,6);c.beginPath();c.moveTo(120,22);c.lineTo(120,6);c.stroke();glow(c,120,7,14,'255,60,50',.75);c.fillStyle='#ff6b5e';c.beginPath();c.arc(120,7,2.6,0,7);c.fill();
+  c.fillStyle='#2b2b30';c.fillRect(300,94,3,8);c.fillRect(354,94,3,8);c.fillRect(290,70,78,26);c.fillStyle='#efe7d2';c.fillRect(293,73,72,20);txt(c,'好宅熱銷中',329,84,8,'#a02828','center');txt(c,'接待中心開放',329,91,5,'#555','center',700);
+  c.strokeStyle='rgba(25,28,40,.85)';c.lineWidth=1.1;for(const [a,b] of [[64,88],[72,98]]){c.beginPath();c.moveTo(0,a);c.quadraticCurveTo(200,b+24,PW,a+4);c.stroke()}
+  shophouse(c,6,146,104,236,'#c7b9a0',1);
+  for(let f=0;f<3;f++)for(let k=0;k<3;k++){win(c,18+k*44,112+f*22,26,14,r()<.55);if(k<2)acUnit(c,46+k*44,128+f*22)}
+  c.fillStyle='#ffffff';c.fillRect(6,176,146,16);c.fillStyle='#1d8a5a';c.fillRect(6,176,146,3);c.fillRect(6,189,146,3);txt(c,'全日便利　光明店',79,187.5,8,'#16653f','center');
+  c.fillStyle='#eef8f3';c.fillRect(10,192,138,44);
+  const sh=['#e15b4f','#f0b43c','#4f8fd8','#62b36a','#d77bd0'];for(let row=0;row<3;row++)for(let k=0;k<16;k++){c.fillStyle=sh[(k+row)%5];c.fillRect(14+k*6.5,197+row*11,5,7)}
+  c.fillStyle='#d9e9e3';c.fillRect(118,194,28,42);c.strokeStyle='#5b6b66';c.lineWidth=1.5;c.strokeRect(118,194,28,42);c.beginPath();c.moveTo(132,194);c.lineTo(132,236);c.stroke();
+  c.strokeStyle='#5b6b66';c.lineWidth=2;c.strokeRect(10,192,138,44);c.beginPath();c.moveTo(56,192);c.lineTo(56,236);c.moveTo(100,192);c.lineTo(100,236);c.stroke();
+  glow(c,80,240,70,'230,255,245',.35);
+  shophouse(c,152,108,124,236,'#9aa3b2',2);for(let f=0;f<2;f++)for(let k=0;k<2;k++){win(c,166+k*50,132+f*24,30,15,r()<.5)}
+  c.fillStyle='#c62f2f';c.fillRect(152,182,108,16);txt(c,'鮮茶道',206,194,10,'#fff3e0','center');c.fillStyle='#f3dcae';c.fillRect(156,198,100,38);c.fillStyle='#9b6a3a';c.fillRect(160,216,92,20);c.fillStyle='#fff';c.fillRect(200,202,30,10);
+  shophouse(c,260,140,100,236,'#b2a998',3);for(let f=0;f<3;f++)for(let k=0;k<3;k++){win(c,272+k*42,108+f*24,26,15,r()<.5)}
+  c.fillStyle='#2b2b30';c.fillRect(300,94,3,8);c.fillRect(354,94,3,8);c.fillRect(290,70,78,26);c.fillStyle='#efe7d2';c.fillRect(293,73,72,20);txt(c,'好宅熱銷中',329,84,8,'#a02828','center');txt(c,'接待中心開放',329,91,5,'#555','center',700);
+  c.fillStyle='#8c9096';c.fillRect(264,184,132,52);c.strokeStyle='#70747a';c.lineWidth=1;for(let y=186;y<236;y+=4){c.beginPath();c.moveTo(264,y);c.lineTo(396,y);c.stroke()}c.fillStyle='#f7e3b4';c.fillRect(264,226,132,10);
+  c.fillStyle='#9c978e';c.fillRect(0,236,PW,10);c.fillStyle='#7d786f';c.fillRect(0,245,PW,2);
+  c.fillStyle='#3b3e46';c.fillRect(0,247,PW,24);c.strokeStyle='#e8e8e8';c.lineWidth=1.5;c.setLineDash([14,10]);c.beginPath();c.moveTo(0,259);c.lineTo(PW,259);c.stroke();c.setLineDash([]);
+  c.fillStyle='#c9ccd2';rr(c,40,246,74,16,5);c.fill();c.fillStyle='#c9ccd2';rr(c,54,238,44,12,5);c.fill();c.fillStyle='#4b5a6e';c.fillRect(58,240,16,8);c.fillRect(78,240,16,8);c.fillStyle='#1b1b1e';c.beginPath();c.arc(56,263,6,0,7);c.arc(98,263,6,0,7);c.fill();glow(c,40,254,10,'255,240,200',.7);
+  scooter(c,170,245,'#5c6a80');scooter(c,198,246,'#a8423a');scooter(c,226,245,'#e8e8e8');
+  c.fillStyle='#4a4e55';c.fillRect(290,150,4,96);c.fillRect(230,152,64,3);c.fillStyle='#1d1f23';c.fillRect(232,155,12,24);for(const [yy,col] of [[160,'#3a3a3a'],[167,'#3a3a3a'],[174,'#3ddc84']]){c.fillStyle=col;c.beginPath();c.arc(238,yy,2.6,0,7);c.fill()}glow(c,238,174,7,'60,230,130',.6);
+  c.fillStyle='#1c7a4a';c.fillRect(248,156,40,13);c.strokeStyle='#ffffff';c.lineWidth=.8;c.strokeRect(249,157,38,11);txt(c,'光明路二段',268,165.5,6.5,'#ffffff','center');
+  c.fillStyle='#55585e';c.fillRect(371,212,3,34);c.fillStyle='#c62828';c.beginPath();c.arc(372,208,8,0,7);c.fill();c.fillStyle='#1d4fa8';c.beginPath();c.arc(372,208,5.5,0,7);c.fill();c.strokeStyle='#c62828';c.lineWidth=1.8;c.beginPath();c.moveTo(368,204);c.lineTo(376,212);c.stroke();
+  c.fillStyle='#55585e';c.fillRect(156,150,3,90);c.fillRect(156,150,14,3);glow(c,170,156,22,'255,200,120',.5);c.fillStyle='#ffe2a8';c.fillRect(164,153,10,4);
+  const hr=c.createLinearGradient(0,270,0,280);hr.addColorStop(0,'#c3c9cf');hr.addColorStop(1,'#7c838b');c.fillStyle=hr;c.fillRect(-4,270,PW+8,9);
+  c.fillStyle='#868d95';for(let x=10;x<PW;x+=30)c.fillRect(x,279,4,21);c.fillStyle='#6f757c';c.fillRect(-4,296,PW+8,4);
+  c.fillStyle='#a4552f';c.beginPath();c.moveTo(18,250);c.lineTo(62,250);c.lineTo(57,270);c.lineTo(23,270);c.fill();c.fillStyle='#8c4626';c.fillRect(16,248,48,4);
+  for(const [x,y,s] of [[30,238,9],[42,232,10],[52,240,8],[36,226,7],[48,224,6]]){c.fillStyle='#3f7a3a';c.beginPath();c.ellipse(x,y,s,s*0.6,(x-40)/20,0,7);c.fill()}
+  finish(c,.04,.2)}
+
+function drawP1b(c){const r=rng(23);
+  c.fillStyle='#3a4541';c.fillRect(0,0,PW,PH);glow(c,200,0,260,'230,245,240',.3);c.fillStyle='#f2f8f5';c.fillRect(120,0,160,6);
+  c.fillStyle='#0d1626';c.fillRect(300,22,88,78);c.strokeStyle='#8a948f';c.lineWidth=5;c.strokeRect(300,22,88,78);c.lineWidth=3;c.beginPath();c.moveTo(344,22);c.lineTo(344,100);c.stroke();
+  for(let i=0;i<8;i++){c.fillStyle=`rgba(255,207,122,${.3+r()*.4})`;c.fillRect(306+r()*76,60+r()*34,2,2)}glow(c,362,40,6,'255,59,48',.6);
+  c.fillStyle='#6b5a46';c.fillRect(14,72,112,7);c.fillStyle='#4f4234';c.fillRect(20,79,4,10);c.fillRect(116,79,4,10);
+  helmet(c,54,64,0.9);
+  c.fillStyle='#2d2f33';c.fillRect(92,52,26,20);c.fillStyle='#4a4d52';c.fillRect(96,56,18,6);c.fillStyle='#e6e6e6';c.fillRect(98,64,4,4);
+  c.fillStyle='#f6f4ee';c.beginPath();c.arc(210,52,22,0,7);c.fill();c.strokeStyle='#2c2c2c';c.lineWidth=2.5;c.stroke();c.lineWidth=1;for(let i=0;i<12;i++){const a=i/12*Math.PI*2;c.beginPath();c.moveTo(210+Math.cos(a)*17,52+Math.sin(a)*17);c.lineTo(210+Math.cos(a)*20,52+Math.sin(a)*20);c.stroke()}
+  c.lineWidth=2.6;c.beginPath();c.moveTo(210,52);c.lineTo(210+Math.cos(-Math.PI/2+(11.8/12)*Math.PI*2)*11,52+Math.sin(-Math.PI/2+(11.8/12)*Math.PI*2)*11);c.stroke();c.lineWidth=1.6;c.beginPath();c.moveTo(210,52);c.lineTo(210+Math.cos(-Math.PI/2+(48/60)*Math.PI*2)*16,52+Math.sin(-Math.PI/2+(48/60)*Math.PI*2)*16);c.stroke();
+  c.fillStyle='#e2ddcd';c.fillRect(140,96,60,40);c.fillStyle='#b23a3a';c.fillRect(140,96,60,6);c.fillStyle='#9d9888';for(let i=0;i<4;i++)c.fillRect(146,108+i*6,40+r()*8,2);
+  const t=c.createLinearGradient(0,150,0,PH);t.addColorStop(0,'#6b6152');t.addColorStop(1,'#4a4239');c.fillStyle=t;c.beginPath();c.moveTo(0,160);c.lineTo(PW,150);c.lineTo(PW,PH);c.lineTo(0,PH);c.fill();c.fillStyle='#7c715f';c.fillRect(0,156,PW,4);
+  c.save();c.translate(160,226);c.rotate(-0.08);
+  c.fillStyle='rgba(0,0,0,.35)';c.fillRect(-92,-48,190,104);c.fillStyle='#efeadb';c.fillRect(-96,-52,92,100);c.fillStyle='#f6f2e6';c.fillRect(-2,-52,92,100);c.fillStyle='#bcb6a2';c.fillRect(-4,-52,3,100);
+  txt(c,'光明營區　第二哨',-50,-40,6.5,'#2a2a2a','center');txt(c,'值勤登記',-50,-32,5.5,'#4a4a4a','center',700);
+  c.strokeStyle='#9aa0a8';c.lineWidth=.5;for(let i=0;i<9;i++){c.beginPath();c.moveTo(-92,-26+i*8);c.lineTo(-8,-26+i*8);c.stroke();c.beginPath();c.moveTo(2,-46+i*10);c.lineTo(86,-46+i*10);c.stroke()}
+  c.strokeStyle='#29408a';c.lineWidth=.8;for(let i=0;i<7;i++){c.beginPath();let x=-88;c.moveTo(x,-29+i*8);while(x<-30-r()*20){x+=3;c.lineTo(x,-29+i*8+(r()-.5)*2)}c.stroke()}
+  for(let i=0;i<4;i++){c.beginPath();let x=6;c.moveTo(x,-49+i*10);while(x<60-r()*20){x+=3;c.lineTo(x,-49+i*10+(r()-.5)*2)}c.stroke()}
+  c.restore();
+  c.save();c.translate(250,262);c.rotate(0.5);c.fillStyle='#1a1a1a';c.fillRect(0,0,46,3);c.fillStyle='#c0c0c0';c.fillRect(44,0,4,3);c.restore();
+  c.fillStyle='#202327';rr(c,40,196,26,52,4);c.fill();c.fillStyle='#34383d';c.fillRect(44,202,18,14);c.fillStyle='#5CF2A0';c.fillRect(46,204,8,4);c.fillStyle='#202327';c.fillRect(56,170,3,28);c.fillStyle='#3a3d41';for(let i=0;i<3;i++)c.fillRect(46,222+i*7,14,4);c.fillStyle='#6a6e74';c.beginPath();c.arc(47,196,2.5,0,7);c.fill();
+  c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.ellipse(314,262,26,7,0,0,7);c.fill();c.fillStyle='#f6f3ec';c.beginPath();c.moveTo(292,196);c.lineTo(336,196);c.lineTo(330,262);c.lineTo(298,262);c.closePath();c.fill();
+  c.fillStyle='#1d6e58';c.fillRect(296,214,36,16);txt(c,'全日咖啡',314,225,7,'#eafff6','center');c.fillStyle='#3b2a20';c.beginPath();c.ellipse(314,196,22,5,0,0,7);c.fill();c.fillStyle='#d9d4c8';c.fillRect(290,190,48,6);
+  c.strokeStyle='#e8e8e8';c.lineWidth=2;c.beginPath();c.moveTo(PW,280);c.bezierCurveTo(360,300,330,250,276,278);c.stroke();c.fillStyle='#e8e8e8';c.fillRect(268,274,10,6);
+  finish(c,.04,.25)}
+
+function shoe(c,x,y,col){c.fillStyle='#f4f4f2';rr(c,x,y+14,58,7,3);c.fill();c.fillStyle=col;c.beginPath();c.moveTo(x+2,y+15);c.lineTo(x+6,y+4);c.quadraticCurveTo(x+12,y-2,x+22,y);c.lineTo(x+36,y+5);c.quadraticCurveTo(x+52,y+8,x+57,y+15);c.closePath();c.fill();outline(c,'rgba(0,0,0,.35)',1);
+  c.strokeStyle='#ffffff';c.lineWidth=1.2;for(let i=0;i<4;i++){c.beginPath();c.moveTo(x+22+i*4,y+1+i*1.2);c.lineTo(x+26+i*4,y+5+i*1.2);c.stroke()}c.fillStyle='#ffffff';c.beginPath();c.moveTo(x+30,y+10);c.quadraticCurveTo(x+40,y+6,x+50,y+12);c.lineTo(x+46,y+13);c.quadraticCurveTo(x+40,y+10,x+32,y+12);c.fill()}
+function drawP2b(c){const r=rng(52);
+  sky(c,'#6a7aa0','#f6be92',170);glow(c,300,150,80,'255,215,160',.6);c.fillStyle='#fff0c8';c.beginPath();c.arc(300,150,14,Math.PI,0);c.fill();
+  for(let i=0;i<5;i++){c.fillStyle='rgba(255,226,210,.45)';c.beginPath();c.ellipse(60+i*80,40+r()*40,40,6,0,0,7);c.fill()}
+  c.fillStyle='#575566';c.fillRect(0,132,PW,30);for(let i=0;i<12;i++){c.fillStyle='#4a4858';c.fillRect(i*36,124+r()*10,30,38)}
+  c.fillStyle='#7a7684';c.fillRect(38,104,10,46);c.fillStyle='#8e8a98';c.beginPath();c.ellipse(43,98,24,16,0,0,7);c.fill();outline(c,'#5e5a68',1.2);c.fillStyle='#a6a2b0';c.fillRect(19,96,48,3);txt(c,'興安',43,102,8,'#ffffff','center');
+  c.fillStyle='#6a6676';c.fillRect(130,112,150,40);c.fillStyle='#55525f';c.fillRect(126,106,158,8);for(let i=0;i<8;i++){c.fillStyle='rgba(255,224,170,.75)';c.fillRect(138+i*18,122,8,8)}
+  c.fillStyle='#ece6da';c.fillRect(184,140,34,8);txt(c,'第三營舍',201,147,5.5,'#2a2a2a','center',700);
+  c.strokeStyle='#e0e0e0';c.lineWidth=1.5;c.beginPath();c.moveTo(350,160);c.lineTo(350,84);c.stroke();c.fillStyle='#c23a3a';c.fillRect(351,86,18,11);
+  const f=c.createLinearGradient(0,160,0,PH);f.addColorStop(0,'#6f7e5a');f.addColorStop(1,'#4a5638');c.fillStyle=f;c.fillRect(0,160,PW,PH-160);
+  c.fillStyle='#b25a46';c.beginPath();c.ellipse(200,250,210,70,0,Math.PI,0);c.ellipse(200,250,150,40,0,0,Math.PI,true);c.fill();
+  c.strokeStyle='rgba(255,255,255,.6)';c.lineWidth=1;for(let k=0;k<4;k++){c.beginPath();c.ellipse(200,250,165+k*14,46+k*7,0,Math.PI,0);c.stroke()}
+  c.fillStyle='#6f7e5a';c.beginPath();c.ellipse(200,250,150,40,0,Math.PI,0);c.fill();
+  for(const x of [20,90,320,380])tree(c,x,174,1.2,'#3a4a30');
+  c.fillStyle='#6a4f38';c.fillRect(56,258,66,6);c.fillStyle='#4f3a28';c.fillRect(60,264,4,14);c.fillRect(114,264,4,14);c.fillStyle='#7a5c42';c.fillRect(56,250,66,4);
+  c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.ellipse(306,292,62,6,0,0,7);c.fill();shoe(c,250,268,'#2f6fb0');shoe(c,300,276,'#2f6fb0');
+  finish(c,.04,.2)}
+
+function drawP3a(c){
+  c.fillStyle='#4b3b30';c.fillRect(0,0,PW,PH);
+  const g=c.createLinearGradient(0,30,0,170);g.addColorStop(0,'#8fa6c4');g.addColorStop(1,'#d4c7b4');c.fillStyle=g;c.fillRect(40,30,212,140);
+  c.fillStyle='#62738a';c.beginPath();c.moveTo(40,120);c.lineTo(90,98);c.lineTo(140,110);c.lineTo(200,92);c.lineTo(252,108);c.lineTo(252,170);c.lineTo(40,170);c.fill();
+  c.fillStyle='#7a93a6';c.fillRect(40,128,212,42);c.strokeStyle='rgba(255,255,255,.3)';c.lineWidth=1;for(let i=0;i<5;i++){c.beginPath();c.moveTo(60+i*36,140+i*5);c.lineTo(80+i*36,140+i*5);c.stroke()}
+  c.strokeStyle='#d0402e';c.lineWidth=5;c.beginPath();c.moveTo(62,128);c.quadraticCurveTo(146,58,230,128);c.stroke();c.lineWidth=3;c.beginPath();c.moveTo(56,118);c.lineTo(236,118);c.stroke();
+  c.lineWidth=1.5;for(let i=1;i<10;i++){const x=62+i*16.8;const yTop=128-(1-Math.pow((x-146)/84,2))*35;c.beginPath();c.moveTo(x,yTop+4);c.lineTo(x,118);c.stroke()}
+  c.strokeStyle='#3a2c22';c.lineWidth=10;c.strokeRect(40,30,212,140);c.lineWidth=6;c.beginPath();c.moveTo(146,30);c.lineTo(146,170);c.stroke();
+  c.fillStyle='#2b211b';c.fillRect(270,24,110,60);c.strokeStyle='#8a6a40';c.lineWidth=2;c.strokeRect(270,24,110,60);txt(c,'本日特餐',325,44,13,'#f1d9a8','center');txt(c,'滷肉飯　貢丸湯',325,62,10,'#e3cfa6','center',700);txt(c,'魯白菜　燙青菜',325,76,10,'#e3cfa6','center',700);
+  c.fillStyle='#e6e2da';c.beginPath();c.arc(14,20,12,0,7);c.fill();c.strokeStyle='#8a8478';c.lineWidth=1;for(let i=0;i<4;i++){const a=i*Math.PI/2+0.3;c.beginPath();c.moveTo(14,20);c.lineTo(14+Math.cos(a)*11,20+Math.sin(a)*11);c.stroke()}
+  c.fillStyle='#dcdcdc';c.fillRect(278,94,110,84);c.fillStyle='#bfe3ef';c.fillRect(284,100,98,72);c.strokeStyle='#9aa3a8';c.lineWidth=1.5;c.beginPath();c.moveTo(333,100);c.lineTo(333,172);for(const y of [124,148])c.moveTo(284,y),c.lineTo(382,y);c.stroke();
+  const bc=['#3a8a4a','#d04030','#f0c040','#3a6ad0','#e08030'];for(let row=0;row<3;row++)for(let k=0;k<12;k++){const x=287+k*8+(k>5?4:0);c.fillStyle=bc[(k+row)%5];c.fillRect(x,104+row*24,5,16);c.fillStyle='rgba(255,255,255,.5)';c.fillRect(x+1,105+row*24,1,10)}
+  txt(c,'飲料自取',333,98,6,'#555','center',700);
+  const t=c.createLinearGradient(0,190,0,PH);t.addColorStop(0,'#7a5639');t.addColorStop(1,'#4a3322');c.fillStyle=t;c.fillRect(0,186,PW,PH-186);c.fillStyle='#8a6446';c.fillRect(0,186,PW,4);
+  for(const [x,y,w,col] of [[118,230,38,'#8a5a2b'],[190,250,34,'#d9b26a'],[244,224,28,'#9b3d22']]){c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.ellipse(x+3,y+8,w,w*0.32,0,0,7);c.fill();c.fillStyle='#f2efe9';c.beginPath();c.ellipse(x,y,w,w*0.32,0,0,7);c.fill();c.fillStyle=col;c.beginPath();c.ellipse(x,y-1,w*0.78,w*0.22,0,0,7);c.fill()}
+  c.strokeStyle='#d8b47a';c.lineWidth=3;c.beginPath();c.moveTo(150,286);c.lineTo(222,270);c.moveTo(154,292);c.lineTo(226,276);c.stroke();
+  c.save();c.translate(42,262);c.rotate(-0.12);c.fillStyle='#f8f5ec';c.fillRect(-26,-22,56,60);txt(c,'海口小吃',2,-12,6.5,'#222','center');txt(c,'中正路 12 號',2,-5,5,'#333','center',700);c.fillStyle='#999';for(let i=0;i<5;i++)c.fillRect(-20,2+i*6,30+((i*7)%14),1.5);c.restore();
+  c.save();c.beginPath();c.moveTo(296,PH);c.lineTo(300,214);c.quadraticCurveTo(306,186,334,178);c.lineTo(372,176);c.quadraticCurveTo(396,180,404,196);c.lineTo(404,PH);c.closePath();c.clip();camo(c,290,170,120,140,7,['#6a7352','#4a5238','#8a8a62','#3a4230']);c.restore();
+  c.save();c.beginPath();c.moveTo(296,PH);c.lineTo(300,214);c.quadraticCurveTo(306,186,334,178);c.lineTo(372,176);c.quadraticCurveTo(396,180,404,196);c.lineTo(404,PH);c.closePath();outline(c,'#2a301f',1.5);c.restore();
+  c.strokeStyle='rgba(30,34,22,.6)';c.lineWidth=1.5;c.beginPath();c.moveTo(332,206);c.quadraticCurveTo(334,250,328,PH);c.stroke();
+  c.fillStyle='#c99a74';c.fillRect(344,152,20,28);c.beginPath();c.ellipse(354,140,19,22,0,0,7);c.fill();c.fillStyle='#1d1814';c.beginPath();c.ellipse(354,134,20,18,0,Math.PI*0.95,Math.PI*2.05);c.fill();c.beginPath();c.ellipse(354,128,19,14,0,0,7);c.fill();
+  c.fillStyle='#b88a66';c.beginPath();c.ellipse(335,142,4,7,0,0,7);c.fill();
+  c.fillStyle='#2f3527';c.beginPath();c.arc(316,214,12,0,7);c.fill();c.strokeStyle='#e0c97e';c.lineWidth=2;c.stroke();c.fillStyle='#e0c97e';c.beginPath();c.moveTo(316,206);c.lineTo(322,217);c.lineTo(310,217);c.closePath();c.fill();
+  finish(c,.04,.25)}
+
+function drawP3b(c){
+  sky(c,'#9fb7cf','#e3e9ee',120);
+  c.strokeStyle='#2c2c2c';c.lineWidth=1;for(const y of [40,48,56]){c.beginPath();c.moveTo(0,y);c.quadraticCurveTo(200,y+18,PW,y-4);c.stroke()}
+  c.fillStyle='#9a3d2a';c.beginPath();c.moveTo(290,70);c.quadraticCurveTo(330,52,380,58);c.lineTo(400,70);c.lineTo(400,90);c.lineTo(290,90);c.fill();c.fillStyle='#d4aa50';c.fillRect(300,86,100,6);c.fillStyle='#2f7a4a';c.beginPath();c.moveTo(286,72);c.lineTo(296,62);c.lineTo(300,72);c.fill();
+  c.fillStyle='#e0dacf';c.fillRect(20,60,260,170);c.fillStyle='rgba(0,0,0,.08)';c.fillRect(272,60,8,170);for(let i=0;i<3;i++)for(let j=0;j<2;j++)win(c,40+i*80,72+j*36,50,24,false);
+  c.fillStyle='#b8231f';c.fillRect(40,150,220,30);txt(c,'海口小吃',150,172,17,'#fff3d6','center');
+  c.fillStyle='#6a5444';c.fillRect(40,180,220,50);c.fillStyle='#f4f1ea';c.fillRect(150,184,96,20);c.strokeStyle='#999';c.lineWidth=.8;for(let i=0;i<3;i++){c.beginPath();c.moveTo(156,189+i*5);c.lineTo(240,189+i*5);c.stroke()}
+  c.fillStyle='#c4c9ce';c.fillRect(56,206,100,24);c.strokeStyle='#8a9096';c.lineWidth=1;c.strokeRect(56,206,100,24);c.fillStyle='#9aa0a6';c.beginPath();c.ellipse(86,206,18,5,0,0,7);c.fill();c.fillStyle='#d7dbe0';c.fillRect(70,194,32,12);
+  c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=1.5;for(const x of [80,90]){c.beginPath();c.moveTo(x,192);c.quadraticCurveTo(x-6,184,x,176);c.stroke()}
+  for(const x of [50,250]){c.strokeStyle='#333';c.lineWidth=1;c.beginPath();c.moveTo(x,180);c.lineTo(x,186);c.stroke();c.fillStyle='#d42a22';c.beginPath();c.ellipse(x,193,7,9,0,0,7);c.fill();c.fillStyle='#e8c050';c.fillRect(x-6,185,12,2);c.fillRect(x-6,200,12,2)}
+  c.fillStyle='#8f8f8f';c.fillRect(0,230,PW,70);c.fillStyle='#777';c.fillRect(0,230,PW,6);c.strokeStyle='#ececec';c.lineWidth=2;c.setLineDash([16,12]);c.beginPath();c.moveTo(0,270);c.lineTo(PW,270);c.stroke();c.setLineDash([]);
+  for(const [x,col] of [[176,'#d03030'],[198,'#3060c0'],[220,'#d03030']]){c.fillStyle=col;c.fillRect(x,240,16,4);c.fillRect(x+1,244,2,10);c.fillRect(x+13,244,2,10)}
+  c.strokeStyle='#555';c.lineWidth=3;c.beginPath();c.moveTo(320,120);c.lineTo(320,236);c.stroke();rr(c,304,120,32,40,3);c.fillStyle='#1f5aa6';c.fill();txt(c,'公車',320,132,6,'#fff','center');txt(c,'海口里',320,144,7,'#fff','center');txt(c,'往 漁港',320,154,5,'#d8e6ff','center',700);
+  scooter(c,60,244,'#c9c9c9');scooter(c,92,245,'#3a5a8a');scooter(c,126,244,'#8a2a2a');
+  tree(c,370,232,1.6,'#3d5a34');tree(c,288,230,1.1,'#456a3a');
+  finish(c,.04,.2)}
+
+function drawP4a(c){const r=rng(41);
+  sky(c,'#9aaab8','#d8dbd8',130);
+  for(let i=0;i<4;i++){c.fillStyle='rgba(250,250,250,.55)';c.beginPath();c.ellipse(40+i*100+r()*20,24+r()*20,36,8,0,0,7);c.fill()}
+  c.fillStyle='#8a958f';c.beginPath();c.moveTo(0,110);c.lineTo(60,92);c.lineTo(120,100);c.lineTo(160,96);c.lineTo(200,44);c.lineTo(224,70);c.lineTo(250,36);c.lineTo(300,92);c.lineTo(360,88);c.lineTo(PW,100);c.lineTo(PW,140);c.lineTo(0,140);c.fill();
+  c.fillStyle='#74827a';c.beginPath();c.moveTo(0,124);c.lineTo(80,108);c.lineTo(180,118);c.lineTo(280,104);c.lineTo(PW,116);c.lineTo(PW,150);c.lineTo(0,150);c.fill();
+  c.strokeStyle='#5d6460';c.lineWidth=1.2;for(const x of [26,350]){c.beginPath();c.moveTo(x-8,132);c.lineTo(x,84);c.lineTo(x+8,132);c.moveTo(x-10,96);c.lineTo(x+10,96);c.moveTo(x-6,110);c.lineTo(x+6,110);c.stroke()}c.beginPath();c.moveTo(26,88);c.quadraticCurveTo(190,110,350,88);c.stroke();
+  const f=c.createLinearGradient(0,130,0,PH);f.addColorStop(0,'#77845c');f.addColorStop(1,'#56603f');c.fillStyle=f;c.fillRect(0,132,PW,PH-132);
+  c.fillStyle='#b8bab2';c.fillRect(240,120,150,30);c.fillStyle='#868a82';c.fillRect(236,114,158,7);for(let i=0;i<8;i++){c.fillStyle='#4e534e';c.fillRect(248+i*18,128,8,8)}
+  c.strokeStyle='#59604c';c.lineWidth=1.5;for(let x=0;x<PW;x+=26){c.beginPath();c.moveTo(x,150);c.lineTo(x,164);c.stroke()}c.beginPath();c.moveTo(0,153);c.lineTo(PW,153);c.moveTo(0,159);c.lineTo(PW,159);c.stroke();
+  c.strokeStyle='#4a4a44';c.lineWidth=2;c.beginPath();c.moveTo(226,190);c.lineTo(226,160);c.stroke();c.fillStyle='#f4f4ee';c.fillRect(212,150,40,12);c.strokeStyle='#2a6a3a';c.lineWidth=1;c.strokeRect(212,150,40,12);txt(c,'←南嶺 3 公里',232,158.5,5.5,'#2a6a3a','center');
+  c.save();c.translate(70,182);c.fillStyle='#46503a';c.fillRect(0,-14,120,14);c.save();c.translate(18,-14);c.rotate(-0.55);c.fillStyle='#525e44';c.fillRect(0,-20,104,20);c.fillStyle='#606c4a';c.fillRect(100,-20,6,20);c.strokeStyle='#36402c';c.lineWidth=1.2;c.beginPath();c.moveTo(0,-10);c.lineTo(104,-10);c.stroke();c.restore();
+  c.fillStyle='#1c1e1b';for(const x of [16,40,100]){c.beginPath();c.arc(x,2,8,0,7);c.fill()}c.restore();
+  c.fillStyle='rgba(70,80,52,.5)';c.beginPath();c.moveTo(56,186);c.lineTo(74,140);c.lineTo(140,132);c.lineTo(206,150);c.lineTo(204,188);c.closePath();c.fill();
+  c.strokeStyle='rgba(40,46,30,.5)';c.lineWidth=.7;for(let i=0;i<14;i++){c.beginPath();c.moveTo(60+i*10,140);c.lineTo(66+i*10,188);c.stroke();c.beginPath();c.moveTo(58,146+i*3);c.lineTo(204,150+i*3);c.stroke()}
+  for(const x of [10,236,300])tree(c,x,200,1.1,'#3f5034');
+  c.save();c.beginPath();c.moveTo(318,PH);c.lineTo(320,236);c.quadraticCurveTo(330,214,352,212);c.lineTo(384,212);c.quadraticCurveTo(402,216,404,236);c.lineTo(404,PH);c.closePath();c.clip();camo(c,312,206,96,100,5,['#5e6848','#45503a','#7a7c5a','#39412e']);c.restore();
+  c.fillStyle='#4f5838';rr(c,338,232,52,68,8);c.fill();outline(c,'#2e3422',1.5);c.fillStyle='#454d31';c.fillRect(344,244,40,14);c.strokeStyle='#2e3422';c.lineWidth=2;c.beginPath();c.moveTo(344,232);c.lineTo(340,214);c.moveTo(384,232);c.lineTo(388,214);c.stroke();
+  c.fillStyle='#b88a66';c.fillRect(358,198,14,16);helmet(c,365,192,0.85);
+  finish(c,.04,.2)}
+
+function drawP4b(c){
+  c.fillStyle='#7a8478';c.fillRect(0,0,PW,PH);glow(c,330,40,170,'255,245,220',.3);
+  c.fillStyle='#c8dbe3';c.fillRect(296,20,86,70);c.strokeStyle='#e4e4dc';c.lineWidth=5;c.strokeRect(296,20,86,70);c.beginPath();c.moveTo(339,20);c.lineTo(339,90);c.stroke();
+  c.fillStyle='#f6f6f1';c.fillRect(110,24,150,92);c.strokeStyle='#b0b0a8';c.lineWidth=3;c.strokeRect(110,24,150,92);c.fillStyle='#9a9a92';c.fillRect(110,116,150,4);txt(c,'南嶺陣地　輪值表',185,40,7.5,'#1d3b8f','center');
+  c.strokeStyle='#8a8f98';c.lineWidth=.6;for(let i=0;i<6;i++){c.beginPath();c.moveTo(118,50+i*10);c.lineTo(252,50+i*10);c.stroke()}c.beginPath();c.moveTo(150,46);c.lineTo(150,106);c.stroke();
+  c.strokeStyle='#c0392b';c.lineWidth=.9;for(let i=0;i<5;i++){c.beginPath();c.moveTo(156,54+i*10);c.lineTo(156+30+(i*13)%40,54+i*10);c.stroke()}
+  c.fillStyle='#efeadc';c.fillRect(30,30,56,66);c.fillStyle='#b23a3a';c.fillRect(30,30,56,12);txt(c,'10 月',58,40,7,'#fff','center');c.fillStyle='#9a9488';for(let i=0;i<5;i++)for(let j=0;j<5;j++)c.fillRect(34+i*10,48+j*9,6,5);
+  c.fillStyle='#a49e90';c.fillRect(0,250,PW,50);c.strokeStyle='#8e887c';c.lineWidth=1;for(let x=0;x<PW;x+=40){c.beginPath();c.moveTo(x,250);c.lineTo(x-20,300);c.stroke()}c.beginPath();c.moveTo(0,272);c.lineTo(PW,272);c.stroke();
+  for(let i=0;i<3;i++){const x=268+i*44;c.fillStyle='#6f7a5c';c.fillRect(x,108,40,142);c.strokeStyle='#4f5840';c.lineWidth=1.5;c.strokeRect(x,108,40,142);c.beginPath();c.moveTo(x,180);c.lineTo(x+40,180);c.stroke();c.fillStyle='#c8c8c0';c.fillRect(x+30,138,4,14);c.fillRect(x+30,206,4,14);c.strokeStyle='#4f5840';c.lineWidth=1;for(let k=0;k<4;k++){c.beginPath();c.moveTo(x+8,116+k*4);c.lineTo(x+30,116+k*4);c.stroke()}c.fillStyle='#e8e4d8';c.fillRect(x+8,128,16,6)}
+  c.fillStyle='#a2a9ae';c.fillRect(16,118,6,134);c.fillRect(244,118,6,134);c.fillRect(16,150,234,6);c.fillRect(16,222,234,6);
+  c.fillStyle='#93a382';c.fillRect(22,136,222,14);c.fillRect(22,208,222,14);
+  for(const y of [120,192]){c.fillStyle='#4f5a3c';c.fillRect(34,y,54,18);c.fillStyle='#606c4a';c.fillRect(34,y,54,4);outline(c,'#2f3624',1);c.strokeStyle='#2f3624';c.strokeRect(34,y,54,18);c.fillStyle='#ffffff';rr(c,196,y+6,40,12,4);c.fill();outline(c,'#c8c8c0',1)}
+  c.strokeStyle='#a2a9ae';c.lineWidth=2;for(let k=0;k<4;k++){c.beginPath();c.moveTo(236,160+k*14);c.lineTo(250,160+k*14);c.stroke()}
+  for(const x of [196,226]){c.fillStyle='#1d1d1d';c.fillRect(x,260,14,26);c.beginPath();c.moveTo(x,282);c.lineTo(x+28,284);c.quadraticCurveTo(x+32,292,x+28,296);c.lineTo(x,296);c.fill();c.fillStyle='#3a3a3a';c.fillRect(x,292,30,4);c.fillStyle='#4a4a4a';for(let k=0;k<3;k++)c.fillRect(x+3,264+k*6,8,1.5)}
+  finish(c,.04,.2)}
+
+function drawP5b(c){
+  c.fillStyle='#e8e6e0';c.fillRect(0,0,PW,PH);
+  c.fillStyle='#f6f6f2';c.beginPath();c.moveTo(150,0);c.lineTo(250,0);c.lineTo(212,66);c.lineTo(188,66);c.fill();
+  c.fillStyle='#d6d3cb';c.fillRect(160,70,80,82);c.fillStyle='#b9c7d0';c.fillRect(184,80,32,40);c.strokeStyle='#8a8a84';c.lineWidth=2;c.strokeRect(160,70,80,82);c.strokeRect(184,80,32,40);
+  const wnd=(pts)=>{const g=c.createLinearGradient(0,40,0,140);g.addColorStop(0,'#a9c6e0');g.addColorStop(.55,'#cfe0ea');g.addColorStop(.56,'#8aa868');g.addColorStop(1,'#6f8d52');c.fillStyle=g;c.beginPath();c.moveTo(...pts[0]);for(const p of pts.slice(1))c.lineTo(...p);c.closePath();c.fill();outline(c,'#9a9a94',2)};
+  wnd([[0,48],[160,94],[160,128],[0,142]]);wnd([[400,48],[240,94],[240,128],[400,142]]);
+  for(const side of [1,-1]){const X=x=>side>0?x:400-x;c.fillStyle='#b8b8b2';c.beginPath();c.moveTo(X(0),24);c.lineTo(X(160),80);c.lineTo(X(160),86);c.lineTo(X(0),36);c.fill();
+    for(const [x,y,w,h,col] of [[8,2,50,28,'#56603f'],[66,32,34,20,'#4a5436'],[110,50,24,15,'#5e6848'],[140,64,16,10,'#4a5436']]){c.fillStyle=col;rr(c,side>0?x:400-x-w,y,w,h,5);c.fill();outline(c,'#2f3624',1);c.fillStyle='rgba(0,0,0,.2)';c.fillRect(side>0?x+4:400-x-w+4,y+h*0.45,w-8,2)}}
+  c.fillStyle='#a8a499';c.beginPath();c.moveTo(130,PH);c.lineTo(270,PH);c.lineTo(212,152);c.lineTo(188,152);c.fill();
+  const seat=(x,y,w,h)=>{c.fillStyle='#2f5aa6';rr(c,x,y,w,h,Math.min(10,w/6));c.fill();outline(c,'#1f3f78',1.5);c.fillStyle='#f4f4f0';rr(c,x+w*0.1,y+h*0.04,w*0.8,h*0.18,3);c.fill();c.fillStyle='#3d68b8';c.fillRect(x+w*0.12,y+h*0.3,w*0.76,h*0.05)};
+  seat(140,124,22,36);seat(100,132,42,70);seat(0,150,112,150);
+  seat(238,124,22,36);seat(258,132,42,70);
+  seat(214,150,186,150);
+  c.fillStyle='#c9c5ba';c.fillRect(232,228,160,32);c.fillStyle='#a8a499';c.fillRect(232,256,160,4);outline(c,'#8a867c',1);c.strokeStyle='#8a867c';c.strokeRect(232,228,160,32);
+  c.fillStyle='#f4f1e6';c.fillRect(236,236,34,20);c.fillStyle='#c94c3a';c.fillRect(236,232,34,6);c.strokeStyle='#e8e2d0';c.lineWidth=1;c.strokeRect(236,236,34,20);
+  c.save();c.translate(300,244);c.rotate(0.06);c.fillStyle='#fbfaf4';c.fillRect(-34,-14,70,28);c.strokeStyle='#c0392b';c.lineWidth=1;c.strokeRect(-32,-12,66,24);txt(c,'專車 0731',1,-2,6.5,'#222','center');txt(c,'北港 → 南嶺',1,7,5.5,'#333','center',700);c.restore();
+  c.fillStyle='rgba(200,230,255,.85)';rr(c,358,206,16,40,4);c.fill();outline(c,'#8ab0d0',1);c.fillStyle='#2a7ac0';c.fillRect(360,201,12,6);
+  finish(c,.04,.18)}
+
+function drawP6b(c){
+  c.fillStyle='#141b19';c.fillRect(0,0,PW,PH);
+  for(const [x,y] of [[30,30],[200,30]]){c.fillStyle='#262d2b';c.fillRect(x,y,160,110);c.fillStyle='#06180e';c.fillRect(x+8,y+8,144,94);
+    const cx=x+80,cy=y+55;c.strokeStyle='rgba(92,242,160,.55)';c.lineWidth=1;for(const rr2 of [14,28,42]){c.beginPath();c.arc(cx,cy,rr2,0,7);c.stroke()}c.beginPath();c.moveTo(cx-44,cy);c.lineTo(cx+44,cy);c.moveTo(cx,cy-44);c.lineTo(cx,cy+44);c.stroke();
+    const gr=c.createLinearGradient(cx,cy,cx+40,cy-30);gr.addColorStop(0,'rgba(92,242,160,.6)');gr.addColorStop(1,'rgba(92,242,160,0)');c.fillStyle=gr;c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,44,-1.2,-0.5);c.closePath();c.fill();
+    c.fillStyle='#5CF2A0';for(let i=0;i<3;i++)c.fillRect(cx-30+i*24,cy-20+i*14,3,3)}
+  glow(c,110,85,130,'92,242,160',.14);
+  c.fillStyle='#3a403e';c.fillRect(0,170,PW,130);c.fillStyle='#4a514e';c.fillRect(0,170,PW,4);
+  c.fillStyle='#22262a';c.fillRect(60,186,200,40);for(let i=0;i<16;i++)for(let j=0;j<3;j++){c.fillStyle='#41474b';c.fillRect(66+i*12,190+j*11,9,8)}
+  c.fillStyle='#f0eee8';c.beginPath();c.moveTo(290,196);c.lineTo(326,196);c.lineTo(322,250);c.lineTo(294,250);c.fill();c.strokeStyle='#f0eee8';c.lineWidth=4;c.beginPath();c.arc(330,220,10,-1.2,1.2);c.stroke();
+  c.save();c.translate(-10,282);c.rotate(-0.36);c.beginPath();c.rect(0,-22,150,44);c.clip();camo(c,-10,-30,170,60,9,['#6a7352','#4a5238','#8a8a62','#3a4230']);c.restore();
+  c.save();c.translate(-10,282);c.rotate(-0.36);c.strokeStyle='#2a301f';c.lineWidth=1.5;c.strokeRect(0,-22,150,44);c.fillStyle='#4a5238';c.fillRect(140,-22,10,44);c.fillStyle='#c99a74';c.beginPath();c.ellipse(170,0,22,15,0,0,7);c.fill();c.fillStyle='#b88a66';for(let k=0;k<4;k++){c.beginPath();c.ellipse(188,-10+k*6,8,3,0.2,0,7);c.fill()}
+  c.fillStyle='#2f3527';c.beginPath();c.arc(70,-6,12,0,7);c.fill();c.strokeStyle='#e0c97e';c.lineWidth=2;c.stroke();c.fillStyle='#e0c97e';c.beginPath();c.arc(70,-6,5,0,7);c.fill();c.restore();
+  finish(c,.04,.3)}
+
+/* ═══ 六則貼文 ═══ */
+const SCENES=[
+{ av:'傑',name:'阿志',meta:'2 小時前・公開',cap:'最後一晚站哨，明天終於放假！',time:90,
+  photos:[{draw:drawP1a},{draw:drawP1b}],
+  info:[['拍攝時間','<span class="decoy" data-d="itime" tabindex="0">晚上 11:48</span>'],['裝置','<span class="decoy" data-d="idev" tabindex="0">手機・後鏡頭</span>'],['位置資訊','<span class="clue" data-c="gps" tabindex="0">已記錄座標（誤差 5 公尺）</span>']],
+  comments:[['小美','辛苦了！<span class="decoy" data-d="c1" tabindex="0">放假要去哪裡玩</span>？'],['阿翔','哈哈我們以前也站過二哨，<span class="clue" data-c="ctower" tabindex="0">對面就是那座電視塔</span>，晚上紅燈一直閃'],['阿志','<span class="decoy" data-d="c2" tabindex="0">對啊超無聊</span>，明天見']],
+  map:{seed:3,tx:0.62,ty:0.55,ranges:['半徑 30 公里','半徑 10 公里','半徑 3 公里','半徑 1 公里','半徑 300 公尺','半徑 80 公尺','誤差 5 公尺']},
+  clues:[
+    {id:'sign',p:0,boxes:[[244,150,48,24]],cx:268,cy:162,r:22,t:'路牌',e:'放大才看得清楚的「光明路二段」，直接把範圍縮小到一條路。'},
+    {id:'tower',p:0,boxes:[[102,0,36,90]],cx:120,cy:36,r:30,t:'有紅燈的高塔',e:'裝了紅色航空警示燈的高塔不多，對照衛星圖，就知道照片朝哪個方向拍。'},
+    {id:'store',p:0,boxes:[[6,174,146,62]],cx:79,cy:200,r:44,t:'便利商店分店名',e:'招牌上的「光明店」是分店名稱，一查就有地址。'},
+    {id:'log',p:1,boxes:[[62,170,196,110]],cx:160,cy:222,r:66,t:'值勤登記簿',e:'簿子上寫著「光明營區 第二哨」，等於直接寫出了哨所的名字。'},
+    {id:'ctower',dom:true,t:'朋友的留言',e:'留言補了一句「對面就是電視塔」，幫對方確認了高塔是哪一座。朋友的留言也會洩密。'},
+    {id:'gps',dom:true,t:'照片裡的座標',e:'照片檔案保留了拍攝座標，對方連分析都不用。發文前要關掉相機的位置記錄。'}],
+  decoys:[
+    {id:'ad',p:0,boxes:[[288,68,82,36]],t:'建案廣告看板',e:'建案廣告到處都有，縮小不了範圍。'},
+    {id:'nopark',p:0,boxes:[[362,198,22,48]],t:'禁止停車標誌',e:'這種標誌每條路都有，沒有幫助。'},
+    {id:'moon',p:0,boxes:[[332,18,26,26]],t:'月亮',e:'整個台灣看到的都是同一個月亮。'},
+    {id:'scooter',p:0,boxes:[[166,226,84,24]],t:'路邊的機車',e:'機車到處都是，車牌也太小看不清楚。'},
+    {id:'laundry',p:0,boxes:[[6,104,146,70],[260,104,140,78]],t:'對面住家的窗戶',e:'一般住宅大樓，到處都長這樣。'},
+    {id:'light',p:0,boxes:[[230,154,16,26]],t:'紅綠燈',e:'紅綠燈每個路口都有。'},
+    {id:'drink',p:0,boxes:[[152,180,108,56]],t:'連鎖手搖飲店',e:'這個品牌全國到處都有，縮小不了範圍。'},
+    {id:'car',p:0,boxes:[[36,236,82,34]],t:'路過的汽車',e:'車子會移動，車牌也看不清楚。'},
+    {id:'plant',p:0,boxes:[[12,220,56,52]],t:'陽台盆栽',e:'自家陽台的盆栽，和位置無關。'},
+    {id:'cup',p:1,boxes:[[286,186,56,80]],t:'連鎖店的咖啡杯',e:'連鎖店的杯子全國都一樣。'},
+    {id:'clock',p:1,boxes:[[186,28,48,48]],t:'時鐘',e:'知道是晚上快十二點，但看不出地點。'},
+    {id:'helmet',p:1,boxes:[[24,40,58,30]],t:'鋼盔',e:'看得出是軍人，但看不出在哪裡。'},
+    {id:'radio',p:1,boxes:[[36,172,34,80]],t:'無線電',e:'裝備本身看不出位置。'},
+    {id:'c1',dom:true,t:'一般問候',e:'朋友的問候裡沒有任何位置資訊。'},
+    {id:'c2',dom:true,t:'閒聊',e:'這句話沒有透露任何資訊。'},
+    {id:'itime',dom:true,t:'拍攝時間',e:'時間要配合其他線索才有用，單獨看不出地點。'},
+    {id:'idev',dom:true,t:'裝置',e:'知道用什麼手機拍的，對找位置沒有幫助。'}]},
+{ av:'豪',name:'阿志',meta:'今天 06:41・公開',cap:'每天早上跑五公里，今天終於破紀錄！',time:90,
+  photos:[{draw:drawP2a},{draw:drawP2b}],
+  info:[['拍攝時間','<span class="decoy" data-d="itime" tabindex="0">早上 6:41</span>'],['裝置','<span class="decoy" data-d="idev" tabindex="0">運動手錶同步</span>'],['位置資訊','<span class="decoy" data-d="igps" tabindex="0">已移除</span>']],
+  comments:[['小林','學長太猛了吧，<span class="clue" data-c="loop" tabindex="0">營區那圈 1.3 公里</span>你繞了四圈？'],['阿豪','<span class="decoy" data-d="c1" tabindex="0">下次一起跑</span>！'],['教練','<span class="decoy" data-d="c2" tabindex="0">配速很穩喔</span>']],
+  map:{seed:9,tx:0.35,ty:0.45,ranges:['半徑 30 公里','半徑 10 公里','半徑 3 公里','半徑 1 公里','半徑 300 公尺','半徑 100 公尺','誤差 20 公尺']},
+  clues:[
+    {id:'start',p:0,boxes:[[184,200,44,36]],cx:206,cy:215,r:20,t:'起點與終點',e:'每天從同一個地方出發又回來，通常就是住的地方或營區大門。'},
+    {id:'route',p:0,boxes:[[96,52,216,24],[96,196,216,24],[96,52,24,168],[288,52,24,168]],cx:204,cy:136,r:120,t:'跑步路線',e:'路線沿著圍牆繞一圈，等於替對方畫出整個營區的邊界。'},
+    {id:'public',p:0,boxes:[[312,260,76,34]],cx:350,cy:278,r:28,t:'公開分享',e:'設定成公開，全世界都看得到。2018 年，運動紀錄軟體的公開熱度圖就讓外界看出多處軍事基地。'},
+    {id:'road',p:0,boxes:[[126,240,50,16]],cx:150,cy:248,r:18,t:'地圖上的路名',e:'放大才看得到的「興安路」，直接標出營區旁邊是哪一條路。'},
+    {id:'wtower',p:1,boxes:[[16,80,56,62]],cx:43,cy:106,r:30,t:'寫著地名的水塔',e:'水塔上漆著「興安」，造型又特別，是很好認的地標。'},
+    {id:'loop',dom:true,t:'學弟的留言',e:'留言證實這條路線就是「營區那一圈」，還附上距離。'}],
+  decoys:[
+    {id:'park',p:0,boxes:[[0,0,70,120]],t:'地圖上的公園',e:'公園到處都有，沒有名字就縮小不了範圍。'},
+    {id:'weather',p:0,boxes:[[330,8,62,22]],t:'天氣',e:'晴天、24 度，全台灣很多地方都一樣。'},
+    {id:'stats',p:0,boxes:[[8,262,180,34]],t:'距離與時間',e:'跑了多遠、多快，看不出在哪裡跑。'},
+    {id:'field',p:0,boxes:[[200,136,80,48]],t:'操場',e:'學校和營區都有操場，單看這個無法分辨。'},
+    {id:'sun',p:1,boxes:[[280,128,42,32]],t:'日出',e:'太陽只能看出大概的方向，縮小不了範圍。'},
+    {id:'bsign',p:1,boxes:[[180,136,42,14]],t:'「第三營舍」',e:'看得出這裡是營區，但全台灣有很多營區，這幾個字沒有說是哪一個。'},
+    {id:'flag',p:1,boxes:[[344,80,30,22]],t:'旗桿',e:'旗桿到處都有。'},
+    {id:'track',p:1,boxes:[[60,236,280,36]],t:'跑道',e:'紅色跑道很常見，看不出位置。'},
+    {id:'shoes',p:1,boxes:[[250,262,70,38]],t:'跑鞋',e:'鞋子和位置無關。'},
+    {id:'itime',dom:true,t:'拍攝時間',e:'清晨六點多，可以知道作息，但看不出地點。'},
+    {id:'idev',dom:true,t:'裝置',e:'知道用什麼裝置記錄，對找位置沒有幫助。'},
+    {id:'igps',dom:true,t:'座標已移除',e:'這張照片的座標已經移除，這是好習慣。可惜路線圖本身就洩密了。'},
+    {id:'c1',dom:true,t:'約跑步',e:'沒有任何位置資訊。'},{id:'c2',dom:true,t:'稱讚配速',e:'沒有任何位置資訊。'}]},
+{ av:'婷',name:'阿志',meta:'',metaClue:true,cap:'放假跟同梯出來吃飯！',time:90,
+  photos:[{draw:drawP3a},{draw:drawP3b}],
+  info:[['拍攝時間','<span class="decoy" data-d="itime" tabindex="0">中午 12:10</span>'],['裝置','<span class="decoy" data-d="idev" tabindex="0">手機・前鏡頭</span>'],['位置資訊','<span class="decoy" data-d="igps" tabindex="0">未附加</span>']],
+  comments:[['阿凱','海口那間我也常去，<span class="clue" data-c="gate" tabindex="0">就在營區正門對面</span>'],['小美','<span class="decoy" data-d="c1" tabindex="0">看起來好好吃</span>'],['阿志','<span class="decoy" data-d="c2" tabindex="0">下次帶你去</span>']],
+  map:{seed:17,tx:0.5,ty:0.62,ranges:['半徑 30 公里','半徑 8 公里','半徑 2 公里','半徑 500 公尺','半徑 150 公尺','半徑 50 公尺','誤差 10 公尺']},
+  clues:[
+    {id:'checkin',dom:true,t:'打卡地點',e:'打卡等於直接告訴所有人你在哪一家店。'},
+    {id:'receipt',p:0,boxes:[[10,234,66,68]],cx:44,cy:266,r:30,t:'桌上的收據',e:'放大就看得到店名和地址「中正路 12 號」。'},
+    {id:'bridge',p:0,boxes:[[52,64,190,70]],cx:146,cy:100,r:56,t:'窗外的紅色拱橋',e:'少見的地標。從照片的角度，還能推算出店在橋的哪一側。'},
+    {id:'patch',p:0,boxes:[[298,196,36,36]],cx:316,cy:214,r:18,t:'袖子上的臂章',e:'臂章看得出所屬部隊，對方就知道這個部隊的人在這附近活動。'},
+    {id:'bus',p:1,boxes:[[300,116,40,48]],cx:320,cy:140,r:26,t:'公車站牌',e:'站牌上的「海口里」是站名，一查就知道在哪條路上。'},
+    {id:'gate',dom:true,t:'朋友的留言',e:'一句「就在營區正門對面」，把店和營區的位置綁在一起。'}],
+  decoys:[
+    {id:'menu',p:0,boxes:[[270,24,110,60]],t:'菜單看板',e:'滷肉飯、貢丸湯到處都有。'},
+    {id:'fan',p:0,boxes:[[2,8,26,26]],t:'電扇',e:'和位置無關。'},
+    {id:'bowls',p:0,boxes:[[78,212,196,56]],t:'桌上的菜',e:'食物看不出在哪裡。'},
+    {id:'fridge',p:0,boxes:[[276,92,114,86]],t:'飲料冰箱',e:'每家小吃店都有，看不出位置。'},{id:'mate',p:0,boxes:[[332,116,46,64]],t:'同梯的背影',e:'只看到背影，看不出位置。'},
+    {id:'shop',p:1,boxes:[[40,148,220,34]],t:'店家招牌',e:'「海口小吃」這種店名可能不只一家，要配合其他線索才有用。'},
+    {id:'temple',p:1,boxes:[[286,50,114,44]],t:'廟的屋頂',e:'廟到處都有，光看屋頂分辨不出是哪一間。'},
+    {id:'scooters',p:1,boxes:[[50,222,100,26]],t:'機車',e:'機車到處都是。'},
+    {id:'wires',p:1,boxes:[[0,34,280,22]],t:'電線',e:'和位置無關。'},
+    {id:'itime',dom:true,t:'拍攝時間',e:'中午吃飯，看不出地點。'},{id:'idev',dom:true,t:'裝置',e:'對找位置沒有幫助。'},
+    {id:'igps',dom:true,t:'座標未附加',e:'這張照片沒有座標，但打卡已經說明了一切。'},
+    {id:'c1',dom:true,t:'稱讚',e:'沒有任何位置資訊。'},{id:'c2',dom:true,t:'閒聊',e:'沒有任何位置資訊。'}]},
+{ av:'凱',name:'阿志',meta:'昨天 17:20・公開',cap:'剛到<span class="clue" data-c="newbase" tabindex="0">新駐地</span>，風景還不錯',time:90,
+  photos:[{draw:drawP4a},{draw:drawP4b}],
+  info:[['拍攝時間','<span class="decoy" data-d="itime" tabindex="0">下午 5:20</span>'],['裝置','<span class="decoy" data-d="idev" tabindex="0">手機・後鏡頭</span>'],['位置資訊','<span class="decoy" data-d="igps" tabindex="0">已移除</span>']],
+  comments:[['媽媽','<span class="decoy" data-d="c1" tabindex="0">要多穿點衣服</span>，山上冷'],['阿哲','<span class="clue" data-c="unit" tabindex="0">南嶺那邊不是飛彈部隊在駐守嗎</span>？'],['阿志','<span class="decoy" data-d="c2" tabindex="0">不能說啦</span>哈哈']],
+  map:{seed:31,tx:0.3,ty:0.38,ranges:['半徑 50 公里','半徑 15 公里','半徑 5 公里','半徑 2 公里','半徑 600 公尺','半徑 200 公尺','誤差 50 公尺']},
+  clues:[
+    {id:'ridge',p:0,boxes:[[150,30,170,62]],cx:236,cy:60,r:56,t:'雙峰山的稜線',e:'形狀特別的山可以和地形圖比對，算出拍照的位置和方向。'},
+    {id:'sign',p:0,boxes:[[206,144,52,24]],cx:232,cy:156,r:20,t:'路標',e:'放大看得到「←南嶺 3 公里」，直接說出離南嶺多遠、在哪一側。'},
+    {id:'launcher',p:0,boxes:[[56,124,150,66]],cx:130,cy:160,r:58,t:'偽裝網下的發射車',e:'對方不只知道你在哪裡，還知道這裡部署了什麼武器。'},
+    {id:'board',p:1,boxes:[[110,24,150,92]],cx:185,cy:70,r:56,t:'白板上的輪值表',e:'標題寫著「南嶺陣地」，等於直接寫出了陣地名稱。'},
+    {id:'newbase',dom:true,t:'「新駐地」',e:'這三個字透露部隊剛移防，對方會開始注意這一帶的變化。'},
+    {id:'unit',dom:true,t:'同學的留言',e:'朋友一句話，把地名和部隊類型都說出來了。'}],
+  decoys:[
+    {id:'clouds',p:0,boxes:[[0,6,400,24]],t:'雲',e:'雲每天都不一樣，看不出位置。'},
+    {id:'pylon',p:0,boxes:[[12,80,28,54],[336,80,28,54]],t:'電塔',e:'高壓電塔全國到處都有。'},
+    {id:'barracks',p:0,boxes:[[236,110,158,42]],t:'營舍',e:'營舍長得都差不多，看不出是哪一個營區。'},
+    {id:'fence',p:0,boxes:[[0,148,400,18]],t:'圍籬',e:'圍籬到處都有。'},{id:'buddy',p:0,boxes:[[318,176,86,124]],t:'同袍的背影',e:'只看到背影和背包，看不出位置。'},
+    {id:'calendar',p:1,boxes:[[30,30,56,66]],t:'月曆',e:'知道是十月，但看不出地點。'},
+    {id:'window',p:1,boxes:[[296,20,86,70]],t:'窗戶',e:'窗外只看得到天空。'},
+    {id:'lockers',p:1,boxes:[[266,106,134,146]],t:'內務櫃',e:'每個營區都有一樣的內務櫃。'},
+    {id:'bunk',p:1,boxes:[[14,116,238,136]],t:'床鋪',e:'看不出位置。'},
+    {id:'boots',p:1,boxes:[[192,256,70,44]],t:'軍靴',e:'看得出是軍人，但看不出在哪裡。'},
+    {id:'itime',dom:true,t:'拍攝時間',e:'看不出地點。'},{id:'idev',dom:true,t:'裝置',e:'對找位置沒有幫助。'},
+    {id:'igps',dom:true,t:'座標已移除',e:'座標移除了，但照片和留言已經說得夠多。'},
+    {id:'c1',dom:true,t:'媽媽的叮嚀',e:'「山上冷」只說明在山區，範圍還很大。'},{id:'c2',dom:true,t:'「不能說啦」',e:'他自己沒說，但朋友已經替他說了。'}]},
+{ av:'銘',name:'阿志',meta:'下午 2:32・公開',cap:'<span class="clue" data-c="move" tabindex="0">部隊移防中</span>，坐了一整天的車……',time:90,
+  photos:[{draw:drawP5a},{draw:drawP5b}],
+  info:[['拍攝時間','<span class="clue" data-c="time" tabindex="0">下午 2:32</span>'],['裝置','<span class="decoy" data-d="idev" tabindex="0">手機・後鏡頭</span>'],['位置資訊','<span class="decoy" data-d="igps" tabindex="0">未附加</span>']],
+  comments:[['小芸','<span class="clue" data-c="dest" tabindex="0">到南嶺記得打給我</span>'],['阿德','<span class="decoy" data-d="c1" tabindex="0">辛苦了</span>'],['阿志','<span class="decoy" data-d="c2" tabindex="0">好</span>']],
+  map:{seed:47,tx:0.7,ty:0.4,ranges:['半徑 80 公里','半徑 30 公里','半徑 10 公里','半徑 3 公里','半徑 1 公里','半徑 400 公尺','誤差 100 公尺']},
+  clues:[
+    {id:'station',p:0,boxes:[[164,52,112,46]],cx:220,cy:74,r:60,t:'車站站牌',e:'站名和下方的方向「北港、南嶺」，說出列車經過哪裡、往哪裡開。'},
+    {id:'flatcar',p:0,boxes:[[40,150,330,66]],cx:200,cy:182,r:90,t:'平板車上的軍車',e:'用火車運送整批車輛，代表有大規模的部隊調動。'},
+    {id:'ticket',p:1,boxes:[[262,226,78,38]],cx:300,cy:244,r:38,t:'桌上的專車單',e:'放大看得到「專車 0731 北港→南嶺」，連車次和終點都有了。'},
+    {id:'move',dom:true,t:'「部隊移防中」',e:'一句話就證實了照片裡看到的事。'},
+    {id:'time',dom:true,t:'拍攝時間',e:'時間加上站名，就能算出這班車何時經過、移動得多快。'},
+    {id:'dest',dom:true,t:'女友的留言',e:'留言說出了目的地。'}],
+  decoys:[
+    {id:'clock',p:0,boxes:[[56,48,28,28]],t:'月台時鐘',e:'時鐘每個車站都有。'},
+    {id:'vend',p:0,boxes:[[314,66,34,48]],t:'販賣機',e:'販賣機到處都有。'},
+    {id:'platform',p:0,boxes:[[24,104,352,44]],t:'月台',e:'月台長得都差不多，要看站名才知道是哪一站。'},
+    {id:'bags',p:1,boxes:[[0,0,160,84],[240,0,160,84]],t:'行李架上的背包',e:'看得出是軍用背包，但看不出位置。'},
+    {id:'lunch',p:1,boxes:[[232,228,42,32]],t:'便當',e:'便當到處都買得到。'},
+    {id:'bottle',p:1,boxes:[[354,198,24,52]],t:'水瓶',e:'和位置無關。'},
+    {id:'seats',p:1,boxes:[[0,124,164,176],[238,124,64,80]],t:'座椅',e:'車廂座椅都一樣。'},
+    {id:'window',p:1,boxes:[[0,46,160,96],[240,46,160,96]],t:'窗外的田',e:'田野到處都是，看不出在哪裡。'},
+    {id:'idev',dom:true,t:'裝置',e:'對找位置沒有幫助。'},{id:'igps',dom:true,t:'座標未附加',e:'沒有座標，但站牌已經說了。'},
+    {id:'c1',dom:true,t:'問候',e:'沒有任何位置資訊。'},{id:'c2',dom:true,t:'回覆',e:'沒有任何位置資訊。'}]},
+{ own:true,av:'你',name:'你',meta:'準備發布…',cap:'值班看到的夕陽 <span class="clue" data-c="tag" tabindex="0">#海岬站</span>',time:90,
+  photos:[{draw:drawP6a},{draw:drawP6b}],
+  info:[['拍攝時間','<span class="decoy" data-d="itime" tabindex="0">傍晚 5:42</span>'],['裝置','<span class="decoy" data-d="idev" tabindex="0">手機・後鏡頭</span>']],
+  map:{seed:59,tx:0.8,ty:0.3,ranges:['半徑 30 公里','半徑 10 公里','半徑 3 公里','半徑 1 公里','半徑 300 公尺','半徑 50 公尺','誤差 5 公尺']},
+  clues:[
+    {id:'dome',p:0,boxes:[[284,58,96,86]],cx:330,cy:98,r:46,t:'白色雷達罩',e:'球形雷達罩是重要的軍事設施，拍進照片等於公開了它的位置和外觀。'},
+    {id:'nophoto',p:0,boxes:[[264,154,52,26]],cx:290,cy:168,r:24,t:'「禁止攝影」告示牌',e:'牌子上寫著軍事管制區、禁止攝影。這張照片本來就不該拍。'},
+    {id:'screen',p:1,boxes:[[30,30,330,110]],cx:195,cy:85,r:100,t:'雷達螢幕',e:'拍到內部設備的畫面，對方能從中了解系統的樣子。'},
+    {id:'patch2',p:1,boxes:[[34,232,40,40]],cx:54,cy:252,r:20,t:'臂章',e:'臂章看得出所屬單位。'},
+    {id:'tag',dom:true,t:'標籤 #海岬站',e:'主題標籤把你和這個地點綁在一起，別人一搜就找得到。'},
+    {id:'geo',dom:true,t:'分享位置：開',e:'位置分享打開，照片會附上精確座標，連分析都不用。'}],
+  decoys:[
+    {id:'sun',p:0,boxes:[[126,136,48,28]],t:'夕陽',e:'夕陽是這張照片想拍的東西，本身沒有問題。'},
+    {id:'boats',p:0,boxes:[[36,172,66,34]],t:'漁船',e:'海上的船到處都有。'},
+    {id:'birds',p:0,boxes:[[50,42,50,28]],t:'海鳥',e:'和位置無關。'},
+    {id:'mug',p:1,boxes:[[284,188,52,66]],t:'馬克杯',e:'和位置無關。'},
+    {id:'keys',p:1,boxes:[[60,184,200,44]],t:'鍵盤',e:'一般的鍵盤，看不出什麼。'},
+    {id:'itime',dom:true,t:'拍攝時間',e:'看不出地點。'},{id:'idev',dom:true,t:'裝置',e:'對找位置沒有幫助。'}]},
+];
+SCENES.forEach(sc=>{if(!sc.photos)sc.photos=[{draw:sc.draw}];sc.decoys=sc.decoys||[];sc.clues.forEach(c=>{if(!c.dom&&c.p==null)c.p=0});sc.decoys.forEach(d=>{if(!d.dom&&d.p==null)d.p=0})});
+
+/* ═══ 狀態 ═══ */
+let S={i:0,t:0,found:{},dec:{},wrong:[],state:'start',total:0,results:[],decTotal:0,spent:0};
+let P=0,Z=1,OX=0,OY=0;
+const pc=$('photo'),px=pc.getContext('2d'),mc=$('map'),mx=mc.getContext('2d');let PK=1,MW=340,MH=80;
+let BGS=[];
+function fit(){const dpr=Math.min(devicePixelRatio||1,2),w=pc.clientWidth||360;pc.width=w*dpr;pc.height=w*dpr*PH/PW;PK=pc.width/PW;
+  MW=mc.clientWidth||340;MH=mc.clientHeight||80;mc.width=MW*dpr;mc.height=MH*dpr;mx.setTransform(dpr,0,0,dpr,0,0)}
+function renderBGs(){const sc=SCENES[S.i];BGS=sc.photos.map(ph=>{const b=document.createElement('canvas');b.width=PW*3;b.height=PH*3;const c=b.getContext('2d');c.scale(3,3);ph.draw(c);return b})}
+addEventListener('resize',fit);
+function setPhoto(k){const n=SCENES[S.i].photos.length;P=(k+n)%n;Z=1;OX=0;OY=0;updPhotoUI()}
+function updPhotoUI(){const n=SCENES[S.i].photos.length;$('prevBtn').hidden=$('nextPBtn').hidden=n<2;$('pageTag').hidden=n<2;$('pageTag').textContent=`${P+1}／${n}`;$('zoomBtn').textContent=Z>1?'縮小':'放大';$('zoomHint').hidden=Z===1}
+function clampView(){Z=Math.max(1,Math.min(3,Z));OX=Math.max(0,Math.min(PW-PW/Z,OX));OY=Math.max(0,Math.min(PH-PH/Z,OY))}
+function zoomAt(z,cx,cy){const nx=cx-(cx-OX)*Z/z,ny=cy-(cy-OY)*Z/z;Z=z;OX=nx;OY=ny;clampView();updPhotoUI()}
+
+function bindSpans(root){root.querySelectorAll('.clue,.decoy').forEach(el=>{const h=()=>el.classList.contains('clue')?tapClue(el.dataset.c,el):tapDecoy(el.dataset.d,el);el.onclick=h;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();h()}}})}
+function loadPost(i){expT=0;$('exp').classList.remove('on');S.i=i;const sc=SCENES[i];S.t=sc.time;S.found={};S.dec={};S.wrong=[];S.state='play';
+  $('hTitle').textContent=sc.own?'發文前檢查':'情報分析';$('hSub').textContent=`第 ${i+1} 則／共 ${SCENES.length} 則`;
+  $('pAv').textContent=sc.own?sc.av:'';$('pAv').style.backgroundImage=sc.own?'none':`url(${AVATAR})`;$('pName').textContent=sc.name;
+  $('pMeta').innerHTML=sc.metaClue?'<span class="clue" data-c="checkin" tabindex="0">打卡：海口小吃店</span>・1 小時前・公開':sc.meta;
+  $('pCap').innerHTML=sc.cap;
+  $('pFoot').innerHTML=sc.own?'<div class="compose"><span class="clue" data-c="geo" tabindex="0"><span class="tog">分享位置：開 <i></i></span></span><span class="lbl">發布前先檢查</span></div>':`<div class="likes">讚 <span class="mono">${[128,64,212,37,90][i]||20}</span>　留言 <span class="mono">${sc.comments?sc.comments.length:[14,6,31,4,11][i]}</span>${sc.comments?'<span style="margin-left:10px;color:var(--amber)">往下看留言</span>':''}</div>`;
+  $('info').hidden=true;$('info').innerHTML=sc.info?sc.info.map(([k,v])=>`<div><span class="k">${k}</span><span>${v}</span></div>`).join(''):'';$('infoBtn').hidden=!sc.info;
+  $('cmts').hidden=!sc.comments;$('cmts').innerHTML=sc.comments?sc.comments.map(([n,t])=>`<div class="cmt"><b>${n}</b>${t}</div>`).join(''):'';
+  $('task').textContent=sc.own?'找出發布前該處理的地方':'點出能找出位置的線索';
+  $('dots').innerHTML=sc.clues.map(()=>'<span></span>').join('');
+  bindSpans($('post'));$('scroll').scrollTop=0;
+  renderBGs();setPhoto(0);fit();updRange()}
+function nFound(){return Object.keys(S.found).length}
+function updRange(){const sc=SCENES[S.i];$('rangeTxt').textContent=sc.map.ranges[nFound()];$('dots').querySelectorAll('span').forEach((d,k)=>d.classList.toggle('on',k<nFound()))}
+function tapClue(id,el){const cl=SCENES[S.i].clues.find(c=>c.id===id);if(!cl||S.found[id]||S.state!=='play')return;S.found[id]=performance.now();
+  if(el)el.classList.add('found');else document.querySelectorAll(`#post .clue[data-c="${id}"]`).forEach(e=>e.classList.add('found'));
+  updRange();showExp('找到：'+cl.t,cl.e,false);
+  if(nFound()===SCENES[S.i].clues.length){S.state='done';setTimeout(()=>result(false),2200)}}
+function tapDecoy(id,el){const d=SCENES[S.i].decoys.find(x=>x.id===id);if(!d||S.state!=='play')return;if(!S.dec[id]){S.dec[id]=performance.now();S.decTotal++}if(el)el.classList.add('seen');showExp('沒有幫助：'+d.t,d.e,true)}
+function hitBox(list,x,y){for(const it of list){if(it.dom||it.p!==P)continue;for(const [bx,by,bw,bh] of it.boxes)if(x>=bx-6&&x<=bx+bw+6&&y>=by-6&&y<=by+bh+6)return it}return null}
+function photoTap(x,y){if(S.state!=='play')return;const sc=SCENES[S.i];
+  const cl=hitBox(sc.clues.filter(c=>!S.found[c.id]),x,y);if(cl){tapClue(cl.id);return}
+  if(hitBox(sc.clues,x,y))return;
+  const d=hitBox(sc.decoys,x,y);if(d){tapDecoy(d.id);return}
+  S.wrong.push({x,y,p:P,t:performance.now()});S.t=Math.max(0,S.t-3);toast('這裡看不出位置　−3 秒')}
+
+/* 照片手勢：點選、拖曳、兩指縮放、左右滑動 */
+const ptrs=new Map();let g0=null;
+function toPhoto(e){const b=pc.getBoundingClientRect();return{x:OX+(e.clientX-b.left)/b.width*PW/Z,y:OY+(e.clientY-b.top)/b.height*PH/Z,sx:e.clientX,sy:e.clientY}}
+pc.addEventListener('pointerdown',e=>{pc.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===1)g0={sx:e.clientX,sy:e.clientY,ox:OX,oy:OY,moved:false,pinch:false};
+  else if(ptrs.size===2){const [a,b]=[...ptrs.values()];g0.pinch=true;g0.d0=Math.hypot(a.x-b.x,a.y-b.y);g0.z0=Z;g0.moved=true}});
+pc.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId)||!g0)return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});const b=pc.getBoundingClientRect();
+  if(ptrs.size===2){const [a,c]=[...ptrs.values()];const d=Math.hypot(a.x-c.x,a.y-c.y),mxp=(a.x+c.x)/2,myp=(a.y+c.y)/2;const cx=OX+(mxp-b.left)/b.width*PW/Z,cy=OY+(myp-b.top)/b.height*PH/Z;zoomAt(Math.max(1,Math.min(3,g0.z0*d/g0.d0)),cx,cy);return}
+  const dx=e.clientX-g0.sx,dy=e.clientY-g0.sy;if(Math.hypot(dx,dy)>8)g0.moved=true;
+  if(Z>1&&g0.moved){OX=g0.ox-dx/b.width*PW/Z;OY=g0.oy-dy/b.height*PH/Z;clampView()}});
+function endPtr(e){if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);if(ptrs.size>0||!g0)return;
+  const dx=e.clientX-g0.sx;
+  if(!g0.moved){const p=toPhoto(e);photoTap(p.x,p.y)}
+  else if(!g0.pinch&&Z===1&&Math.abs(dx)>45&&SCENES[S.i].photos.length>1)setPhoto(P+(dx<0?1:-1));
+  g0=null}
+pc.addEventListener('pointerup',endPtr);pc.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);g0=null});
+$('zoomBtn').onclick=()=>{if(Z>1){Z=1;OX=0;OY=0;updPhotoUI()}else zoomAt(2.2,PW/2,PH/2)};
+$('prevBtn').onclick=()=>setPhoto(P-1);$('nextPBtn').onclick=()=>setPhoto(P+1);
+$('infoBtn').onclick=()=>{$('info').hidden=!$('info').hidden;$('infoBtn').textContent=$('info').hidden?'照片資訊':'收起資訊'};
+document.addEventListener('click',e=>{if(S.state!=='play')return;const t=e.target;if(t.closest&&(t.closest('#pCap')||t.closest('#cmts'))&&!t.closest('.clue')&&!t.closest('.decoy'))toast('這段文字沒有線索')});
+let toastT=0;function toast(m){$('toast').textContent=m;$('toast').classList.add('on');toastT=1.5}
+let expT=0;function showExp(h,b,dec){$('expH').textContent=h;$('expB').textContent=b;$('exp').classList.toggle('dec',dec);$('exp').classList.add('on');expT=dec?2.2:2.8}
+$('exp').addEventListener('click',()=>{expT=0;$('exp').classList.remove('on')});
+
+/* ═══ 地圖 ═══ */
+function drawMap(c,w,h,sc,k,big){const m=sc.map,r=rng(m.seed),n=sc.clues.length;c.clearRect(0,0,w,h);c.fillStyle='#0f1714';c.fillRect(0,0,w,h);
+  c.fillStyle='#13223a';c.beginPath();c.moveTo(w*0.82,0);for(let y=0;y<=h;y+=8)c.lineTo(w*(0.78+0.06*Math.sin(y/23+m.seed))+(r()-.5)*4,y);c.lineTo(w,h);c.lineTo(w,0);c.fill();
+  c.strokeStyle='#1f3a2e';c.lineWidth=1.5;for(let i=0;i<7;i++){c.beginPath();const y=r()*h;c.moveTo(0,y);c.bezierCurveTo(w*.3,y+(r()-.5)*40,w*.5,y+(r()-.5)*40,w*.8,y+(r()-.5)*30);c.stroke()}
+  for(let i=0;i<9;i++){c.beginPath();const x=r()*w*.78;c.moveTo(x,0);c.lineTo(x+(r()-.5)*40,h);c.stroke()}
+  c.strokeStyle='#2f6b4c';c.lineWidth=3;c.beginPath();c.moveTo(0,h*0.55);c.bezierCurveTo(w*.3,h*.4,w*.5,h*.8,w*.8,h*.5);c.stroke();
+  const tx=m.tx*w,ty=m.ty*h;
+  if(k<n){const rad=w*0.7*Math.pow(0.1,k/Math.max(1,n-1));c.fillStyle='rgba(255,181,71,.13)';c.strokeStyle='#FFB547';c.lineWidth=2;c.setLineDash([5,4]);c.beginPath();c.arc(tx,ty,Math.max(rad,8),0,7);c.fill();c.stroke();c.setLineDash([])}
+  else{c.strokeStyle='#FF5A4E';c.lineWidth=2.5;c.beginPath();c.moveTo(tx-12,ty);c.lineTo(tx+12,ty);c.moveTo(tx,ty-12);c.lineTo(tx,ty+12);c.stroke();c.beginPath();c.arc(tx,ty,big?14:9,0,7);c.stroke();
+    c.font=`900 ${big?16:13}px 'Noto Sans TC',sans-serif`;c.fillStyle='#FF5A4E';c.textAlign=tx>w*0.6?'right':'left';c.fillText('位置確認',tx+(tx>w*0.6?-18:18),ty+5)}}
+
+/* ═══ 主迴圈 ═══ */
+let last=performance.now();
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').classList.remove('on')}
+  if(expT>0){expT-=dt;if(expT<=0)$('exp').classList.remove('on')}
+  if(S.state==='play')S.spent+=dt;
+  if(S.state==='play'&&expT<=0){S.t-=dt;if(S.t<=0){S.t=0;S.state='done';result(true)}}
+  const tm=$('timer');tm.textContent=Math.ceil(S.t);tm.classList.toggle('low',S.t<=10);
+  if(BGS[P]){const k=PK*Z;px.setTransform(k,0,0,k,-OX*k,-OY*k);px.clearRect(OX,OY,PW,PH);px.drawImage(BGS[P],0,0,PW,PH);
+    const sc=SCENES[S.i],tt=now/1000,lw=3/Z;
+    for(const cl of sc.clues){if(cl.dom||cl.p!==P||!S.found[cl.id])continue;const a=Math.min(1,(now-S.found[cl.id])/250);px.strokeStyle='#FFB547';px.lineWidth=lw;px.globalAlpha=a*(0.75+0.25*Math.sin(tt*4.5));px.beginPath();px.arc(cl.cx,cl.cy,cl.r,0,7);px.stroke();px.globalAlpha=1;
+      const fs=15/Z;px.font=`900 ${fs}px 'Noto Sans TC',sans-serif`;const w=px.measureText(cl.t).width+14/Z;let lx=Math.min(PW-w-4/Z,Math.max(4/Z,cl.cx-w/2)),ly=cl.cy-cl.r-28/Z;if(ly<2)ly=cl.cy+cl.r+6/Z;if(ly>PH-26/Z)ly=PH-26/Z;px.fillStyle='#FFB547';px.fillRect(lx,ly,w,24/Z);px.fillStyle='#1a1208';px.textAlign='left';px.fillText(cl.t,lx+7/Z,ly+17/Z)}
+    for(const d of sc.decoys){if(d.dom||d.p!==P||!S.dec[d.id])continue;const [bx,by,bw,bh]=d.boxes[0];px.strokeStyle='rgba(180,195,188,.7)';px.lineWidth=2/Z;px.setLineDash([4/Z,4/Z]);px.strokeRect(bx,by,bw,bh);px.setLineDash([])}
+    if(S.missedShow)for(const cl of sc.clues){if(cl.dom||cl.p!==P||S.found[cl.id])continue;px.strokeStyle='#FF5A4E';px.lineWidth=lw;px.setLineDash([6/Z,5/Z]);px.beginPath();px.arc(cl.cx,cl.cy,cl.r,0,7);px.stroke();px.setLineDash([])}
+    S.wrong=S.wrong.filter(w=>now-w.t<800);for(const w of S.wrong){if(w.p!==P)continue;const k2=(now-w.t)/800,s=9/Z;px.strokeStyle=`rgba(255,90,78,${1-k2})`;px.lineWidth=lw;px.beginPath();px.moveTo(w.x-s,w.y-s);px.lineTo(w.x+s,w.y+s);px.moveTo(w.x+s,w.y-s);px.lineTo(w.x-s,w.y+s);px.stroke()}
+    if(S.state==='play'||S.state==='done')drawMap(mx,MW,MH,sc,nFound(),false)}
+  requestAnimationFrame(frame)}
+
+/* ═══ 第七則：交給 AI ═══ */
+const SIL='<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="13" r="7" fill="#3c6574"/><path d="M3 34c1-9 7-13 14-13s13 4 14 13z" fill="#3c6574"/></svg>';
+/* 名單：soldier=true 為真正的軍人。具名的都是學生在前六則見過的人。 */
+const PEOPLE=(()=>{
+  const named=[
+    {n:'阿志',h:'前五則貼文的發文者',s:97,y:1,r:'五則貼文洩漏駐地、行程與移防',ev:'第 1–5 則貼文：路牌、登記簿、運動紀錄、專車單。'},
+    {n:'你',h:'上週發過一則貼文',s:93,y:1,r:'雷達站夕陽照；標籤「#海岬站」',ev:'你上週已經發過一張類似的夕陽照，當時沒有刪掉標籤。'},
+    {n:'小林',h:'第 2 則的留言',s:91,y:1,r:'知道營區內部的跑步路線長度',ev:'留言：「營區那圈 1.3 公里」。'},
+    {n:'阿翔',h:'第 1 則的留言',s:89,y:0,r:'知道光明營區第二哨的位置',ev:'留言：「我們以前也站過二哨」。',real:'三年前就退伍了，現在在當工程師'},
+    {n:'阿哲',h:'第 4 則的留言',s:87,y:0,r:'知道南嶺有飛彈部隊',ev:'留言：「南嶺那邊不是飛彈部隊在駐守嗎」。',real:'阿志的大學同學，只是隨口一問'},
+    {n:'小芸',h:'第 5 則的留言',s:85,y:0,r:'知道部隊移防的目的地',ev:'留言：「到南嶺記得打給我」。',real:'阿志的女朋友'},
+    {n:'阿凱',h:'第 3 則的留言',s:83,y:0,r:'常去營區正門對面的小吃店',ev:'留言：「海口那間我也常去」。',real:'住在海口里的高中生'},
+    {n:'小美',h:'第 1、3 則的留言',s:80,y:0,r:'多次留言給阿志，詢問休假行程',ev:'留言：「放假要去哪裡玩？」',real:'阿志的表妹'},
+    {n:'阿豪',h:'第 2 則的留言',s:79,y:1,r:'與阿志一起晨跑',ev:'留言：「下次一起跑！」'},
+    {n:'海口小吃店',h:'第 3 則的打卡地點',s:78,y:0,r:'每天在營區正門對面打卡；追蹤 40 個軍人帳號',ev:'店家帳號每天發今日菜色，打卡地點固定在營區正門對面。',real:'小吃店老闆娘，軍人都是她的客人'},
+    {n:'教練',h:'第 2 則的留言',s:76,y:0,r:'掌握阿志的晨跑路線與配速',ev:'留言：「配速很穩喔」。',real:'阿志放假時去的健身房教練'},
+    {n:'阿德',h:'第 5 則的留言',s:74,y:1,r:'回覆移防貼文',ev:'留言：「辛苦了」，同一天打卡海豐車站。'},
+    {n:'媽媽',h:'第 4 則的留言',s:72,y:0,r:'知道駐地在山上',ev:'留言：「要多穿點衣服，山上冷」。',real:'阿志的媽媽'}
+  ];
+  const soldierNames=['阿宏','志明','小傑','阿勳','冠宇','家豪','柏翰','承恩','宇軒','俊傑','彥廷','子豪','建宏','信宏','品睿','冠廷','昱翔'];
+  const sReasons=['穿迷彩服的自拍','發文時間與站哨輪班吻合','與阿志互相追蹤','標籤「#南嶺」','運動紀錄的起點在營區大門','照片背景出現營舍','打卡海豐車站，與移防同一天'];
+  const civ=[
+    {n:'阿芬',r:'上傳多張軍車照片',real:'軍事迷，在路邊拍火車上的軍車'},
+    {n:'志偉',r:'常在南嶺附近打卡',real:'在南嶺種水果的果農'},
+    {n:'小芳',r:'夜間在光明營區附近發文',real:'營區對面便利商店的夜班店員'},
+    {n:'雅婷',r:'穿迷彩服的自拍',real:'週末去爬山，穿的是迷彩外套'},
+    {n:'國華',r:'與阿志互相追蹤',real:'阿志的高中同學'},
+    {n:'淑惠',r:'打卡海豐車站，與移防同一天',real:'每天搭火車通勤的上班族'},
+    {n:'明哲',r:'經常出入營區大門附近',real:'計程車司機，常載放假的阿兵哥'}
+  ];
+  const r=rng(77),gen=[];
+  soldierNames.forEach((n,i)=>gen.push({n,h:'公開帳號',y:1,r:sReasons[i%sReasons.length],ev:'依據：公開貼文中的影像特徵與發文時間。'}));
+  civ.forEach(c=>gen.push({n:c.n,h:'公開帳號',y:0,r:c.r,real:c.real,ev:'依據：公開貼文中的影像特徵與發文時間。'}));
+  gen.forEach(g=>{g.s=70+Math.floor(r()*19)});
+  const all=named.concat(gen).sort((a,b)=>b.s-a.s||a.n.localeCompare(b.n));
+  all.forEach((p,i)=>p.id=i);
+  return all})();
+
+const AI={phase:'',t:0,dec:{},rvT:60,rvStart:0,openT:{},thumbs:null,cells:null,raf:0,done:false};
+function aiSec(id){['aiIntro','aiAnim','aiReview','aiReveal'].forEach(k=>$(k).classList.toggle('on',k===id))}
+function fmtMS(s){s=Math.round(s);return `${Math.floor(s/60)} 分 ${s%60} 秒`}
+function startAI(){
+  $('mAI').classList.add('on');$('mAI').scrollTop=0;aiSec('aiIntro');
+  $('aiSpent').textContent=fmtMS(S.spent||0)}
+/* —— 動畫 —— */
+function aiThumbs(){if(AI.thumbs)return AI.thumbs;AI.thumbs=[];
+  SCENES.slice(0,5).forEach((sc,si)=>sc.photos.forEach((ph,pi)=>{const c=document.createElement('canvas');c.width=PW;c.height=PH;ph.draw(c.getContext('2d'));
+    AI.thumbs.push({c,si,pi,clues:sc.clues.filter(cl=>!cl.dom&&cl.p===pi&&cl.cx!=null)})}));
+  return AI.thumbs}
+function startAnim(){aiSec('aiAnim');$('aiGo').classList.remove('on');AI.t=0;AI.phase='anim';aiThumbs();
+  const c=$('aiC'),dpr=Math.min(devicePixelRatio||1,2);c.width=c.clientWidth*dpr;c.height=c.clientHeight*dpr;
+  AI.ctx=c.getContext('2d');AI.ctx.setTransform(dpr,0,0,dpr,0,0);AI.W=c.clientWidth;AI.H=c.clientHeight;
+  /* 全市帳號格子：前 37 個亮起的格子對應名單 */
+  const W=AI.W,cs=W<420?6:7,cols=Math.floor((W-24)/cs),rows=Math.floor((AI.H*0.5)/cs),r=rng(9);
+  AI.grid={cs,cols,rows,ox:(W-cols*cs)/2,oy:AI.H*0.24,flag:new Set()};
+  while(AI.grid.flag.size<37)AI.grid.flag.add(Math.floor(r()*cols*rows));
+  AI.tiles=[];for(let i=0;i<70;i++)AI.tiles.push({x:r(),y:r(),h:r()*360,w:.6+r()*.8});
+  AI.last=performance.now();cancelAnimationFrame(AI.raf);AI.raf=requestAnimationFrame(animFrame)}
+function animFrame(now){if(AI.phase!=='anim')return;const dt=Math.min(.05,(now-AI.last)/1000);AI.last=now;AI.t+=dt;drawAI(AI.t);
+  if(AI.t>16.2&&!$('aiGo').classList.contains('on'))$('aiGo').classList.add('on');
+  AI.raf=requestAnimationFrame(animFrame)}
+function mono(c,s,x,y,size,col,align){c.font=`700 ${size}px 'IBM Plex Mono',monospace`;c.textAlign=align||'left';c.fillStyle=col;c.fillText(s,x,y)}
+function zh(c,s,x,y,size,col,align){c.font=`900 ${size}px 'Noto Sans TC',sans-serif`;c.textAlign=align||'left';c.fillStyle=col;c.fillText(s,x,y)}
+function ease(t){t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)}
+function num(n){return Math.floor(n).toLocaleString('en-US')}
+function drawAI(t){const c=AI.ctx,W=AI.W,H=AI.H,CY='79,216,255';
+  c.fillStyle='#05090b';c.fillRect(0,0,W,H);
+  /* 六角網格背景 */
+  c.strokeStyle='rgba(79,216,255,.06)';c.lineWidth=1;const hs=22;
+  for(let y=0,row=0;y<H+hs;y+=hs*0.87,row++)for(let x=(row%2)*hs/2;x<W+hs;x+=hs){c.beginPath();for(let k=0;k<6;k++){const a=Math.PI/3*k+Math.PI/6;c.lineTo(x+Math.cos(a)*hs*0.5,y+Math.sin(a)*hs*0.5)}c.closePath();c.stroke()}
+  /* 頂部讀數 */
+  mono(c,'AI ANALYST // 自動情報分析',16,30,13,`rgb(${CY})`);
+  const phaseName=t<5?'影像特徵擷取':t<9.5?'交叉比對資料庫':t<15?'擴大分析：全市帳號':'分析完成';
+  zh(c,phaseName,16,56,20,'#e8f7fc');
+  /* 計時讀數放在「跳過動畫」按鈕正下方，不與按鈕或標題重疊 */
+  const sk=$('aiSkip').getBoundingClientRect(),cv=$('aiC').getBoundingClientRect();
+  const ry=Math.max(70,sk.bottom-cv.top+14);
+  mono(c,'T+'+(Math.min(t,16)*0.05).toFixed(2)+'s',W-16,ry,12,`rgba(${CY},.8)`,'right');
+  const th=aiThumbs();
+  if(t<9.6){
+    /* —— 第一、二段：照片網格與特徵框 —— */
+    const shrink=ease((t-5)/1.2);const gx0=16,gy0=78,cols=3,gap=6;
+    const gw=(W-32-gap*(cols-1))/cols*(1-shrink*0.55),gh=gw*PH/PW;
+    th.forEach((tb,i)=>{const appear=0.5+i*0.18;if(t<appear)return;const a=ease((t-appear)/0.25);
+      const col=i%cols,row=Math.floor(i/cols),x=gx0+col*(gw+gap),y=gy0+row*(gh+gap);
+      c.globalAlpha=a*(1-shrink*0.25);c.drawImage(tb.c,x,y,gw,gh);c.globalAlpha=1;
+      c.strokeStyle=`rgba(${CY},.35)`;c.strokeRect(x+.5,y+.5,gw-1,gh-1);
+      /* 掃描線 */
+      const sp=(t-appear)/0.5;if(sp<1){const sy=y+gh*sp;const g=c.createLinearGradient(0,sy-14,0,sy);g.addColorStop(0,`rgba(${CY},0)`);g.addColorStop(1,`rgba(${CY},.55)`);c.fillStyle=g;c.fillRect(x,sy-14,gw,14)}
+      /* 特徵框 */
+      tb.clues.forEach((cl,k)=>{const ta=appear+0.3+k*0.12;if(t<ta)return;const fa=ease((t-ta)/0.2);
+        const kx=gw/PW,cx=x+cl.cx*kx,cy=y+cl.cy*kx,rr=Math.max(6,cl.r*kx);
+        c.strokeStyle=`rgba(255,181,71,${fa})`;c.lineWidth=1.5;const L=rr*0.5;
+        [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{c.beginPath();c.moveTo(cx+sx*rr,cy+sy*rr-sy*L);c.lineTo(cx+sx*rr,cy+sy*rr);c.lineTo(cx+sx*rr-sx*L,cy+sy*rr);c.stroke()});
+        if(shrink<0.3&&gw>90){c.globalAlpha=fa;mono(c,(92+((k*7+i*3)%8))+'%',cx+rr+2,cy-rr+8,10,'#FFB547');c.globalAlpha=1}})});
+    const nFeat=th.reduce((a,tb,i)=>a+tb.clues.filter((cl,k)=>t>0.8+i*0.18+k*0.12).length,0);
+    const fy=gy0+4*(gh+gap)+16;
+    if(shrink<0.5){zh(c,'阿志・5 則貼文・10 張照片',16,Math.min(fy+6,H-120),17,'#e8f7fc');mono(c,'擷取特徵 '+nFeat,16,Math.min(fy+30,H-96),15,'#FFB547')}
+    /* —— 第二段：資料庫比對 —— */
+    if(t>5.6){if(!AI.stream){AI.stream=[];const r=rng(31);SCENES.slice(0,5).forEach(sc=>sc.clues.forEach(cl=>AI.stream.push(cl.t)));}
+      const sx=16,sy0=78+4*(gh+gap)+14,sh=Math.max(0,78+H*0.42-sy0),lh=17,nL=Math.floor(sh/lh);
+      if(nL>1){c.save();c.beginPath();c.rect(sx,sy0,W*0.5-sx-8,sh);c.clip();const k0=Math.floor((t-5.6)*7);
+        for(let j=0;j<nL;j++){const idx=k0-nL+1+j;if(idx<0)continue;const lab=AI.stream[idx%AI.stream.length],n=num(800+((idx*7919)%46000));
+          c.globalAlpha=j===nL-1?1:0.45+0.5*j/nL;zh(c,'✓ '+lab,sx,sy0+12+j*lh,12,j===nL-1?'#FFB547':'#bfefff');mono(c,n,W*0.5-12,sy0+12+j*lh,11,'rgba(79,216,255,.8)','right')}
+        c.globalAlpha=1;c.restore()}}
+    if(t>5){const a=ease((t-5)/0.8),dbx=W*0.5,dbw=W*0.5-16,dby=78,dbh=H*0.42;
+      c.globalAlpha=a;c.strokeStyle=`rgba(${CY},.5)`;c.strokeRect(dbx,dby,dbw,dbh);
+      mono(c,'IMAGE DB',dbx+6,dby-6,11,`rgb(${CY})`);
+      c.save();c.beginPath();c.rect(dbx,dby,dbw,dbh);c.clip();
+      const scroll=(t-5)*420;AI.tiles.forEach((tl,i)=>{const tw=dbw/5-4,thh=tw*0.72;const col=i%5,base=Math.floor(i/5)*(thh+4);
+        let yy=dby+((base-scroll)%(14*(thh+4))+14*(thh+4))%(14*(thh+4))-thh;
+        c.fillStyle=`hsla(${tl.h},18%,${30+tl.w*14}%,.85)`;c.fillRect(dbx+2+col*(tw+4),yy,tw,thh);
+        c.fillStyle=`hsla(${tl.h},25%,${45+tl.w*12}%,.6)`;c.fillRect(dbx+2+col*(tw+4),yy+thh*0.55,tw,thh*0.45)});
+      c.restore();
+      /* 連線：特徵 → 資料庫 */
+      for(let k=0;k<9;k++){const ph=(t*1.7+k*0.37)%1;if(ph>0.6)continue;const tb=th[(k*4+Math.floor(t*2))%th.length];
+        const col=th.indexOf(tb)%3,row=Math.floor(th.indexOf(tb)/3),x=16+col*(gw+gap)+gw/2,y=78+row*(gh+gap)+gh/2;
+        const tx=dbx+8+((k*53)%Math.max(1,(dbw-16))),ty=dby+10+((k*97)%Math.max(1,dbh-20));
+        c.strokeStyle=`rgba(255,181,71,${0.7*(1-ph/0.6)})`;c.lineWidth=1;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo((x+tx)/2,Math.min(y,ty)-30,tx,ty);c.stroke();
+        c.strokeStyle=`rgba(255,181,71,${0.9*(1-ph/0.6)})`;c.strokeRect(tx-6,ty-5,12,10)}
+      const cnt=Math.min(4820000,4820000*ease((t-5.2)/3.4));
+      mono(c,'比對影像 '+num(cnt)+' 張',dbx,dby+dbh+20,14,`rgb(${CY})`);
+      /* 地圖鎖定 */
+      const my=dby+dbh+34,mh=Math.min(H-my-90,H*0.26);if(mh>60){c.strokeStyle=`rgba(${CY},.4)`;c.strokeRect(16,my,W-32,mh);
+        c.save();c.beginPath();c.rect(16,my,W-32,mh);c.clip();c.strokeStyle='rgba(47,107,76,.7)';c.lineWidth=1;
+        for(let i=0;i<8;i++){c.beginPath();c.moveTo(16,my+mh*(i+.5)/8);c.lineTo(W-16,my+mh*((i*3)%8+.5)/8);c.stroke()}
+        const tx=16+(W-32)*0.62,ty=my+mh*0.55,k=ease((t-5.8)/2.6),rad=Math.max(6,(W*0.6)*(1-k));
+        c.strokeStyle='#FFB547';c.setLineDash([5,4]);c.beginPath();c.arc(tx,ty,rad,0,7);c.stroke();c.setLineDash([]);
+        if(k>=1){c.strokeStyle='#FF5A4E';c.lineWidth=2.5;c.beginPath();c.moveTo(tx-14,ty);c.lineTo(tx+14,ty);c.moveTo(tx,ty-14);c.lineTo(tx,ty+14);c.stroke();c.beginPath();c.arc(tx,ty,10,0,7);c.stroke();
+          zh(c,'位置確認',tx-20,ty+5,15,'#FF5A4E','right')}
+        c.restore()}
+      if(t>8.4){const a2=ease((t-8.4)/0.4);c.globalAlpha=a*a2;c.fillStyle='rgba(5,9,11,.85)';c.fillRect(16,H-84,W-32,58);c.strokeStyle='#FFB547';c.strokeRect(16.5,H-83.5,W-33,57);
+        zh(c,'阿志：位置確認',30,H-50,20,'#FFB547');mono(c,'實際耗時 0.8 秒',W-30,H-50,15,'#FFB547','right');
+        c.globalAlpha=1}
+      c.globalAlpha=1}
+  } else {
+    /* —— 第三段：全市帳號 —— */
+    const g=AI.grid,a=ease((t-9.6)/0.6),wave=(t-10)/4.2;
+    c.globalAlpha=a;
+    for(let i=0;i<g.cols*g.rows;i++){const cx=i%g.cols,cy=Math.floor(i/g.cols);const x=g.ox+cx*g.cs,y=g.oy+cy*g.cs;
+      const d=(cx/g.cols+cy/g.rows)/2;const hit=wave>d;const flag=g.flag.has(i);
+      if(hit&&flag){c.fillStyle='#FFB547';c.fillRect(x-1,y-1,g.cs+1,g.cs+1)}
+      else{const near=hit&&wave-d<0.05;c.fillStyle=near?`rgba(${CY},.9)`:hit?'rgba(79,216,255,.28)':'rgba(79,216,255,.08)';c.fillRect(x,y,g.cs-1.5,g.cs-1.5)}}
+    c.globalAlpha=1;
+    const scanned=Math.min(120000,120000*ease(wave));
+    const by=g.oy+g.rows*g.cs+26;
+    mono(c,'已分析帳號',16,by,14,`rgba(${CY},.8)`);mono(c,num(scanned)+' / 120,000',W-16,by,15,`rgb(${CY})`,'right');
+    const nf=[...g.flag].filter(i=>{const cx=i%g.cols,cy=Math.floor(i/g.cols);return wave>(cx/g.cols+cy/g.rows)/2}).length;
+    mono(c,'可疑分數 70 以上',16,by+24,14,'rgba(255,181,71,.85)');mono(c,nf+' 人',W-16,by+24,15,'#FFB547','right');
+    if(t>14.6){const a3=ease((t-14.6)/0.6);c.globalAlpha=a3;c.fillStyle='rgba(5,9,11,.9)';const bx=16,bw=W-32,bh=108,byy=g.oy+g.rows*g.cs*0.5-bh/2;c.fillRect(bx,byy,bw,bh);c.strokeStyle=`rgb(${CY})`;c.lineWidth=2;c.strokeRect(bx+1,byy+1,bw-2,bh-2);
+      zh(c,'分析完成',W/2,byy+38,24,'#e8f7fc','center');zh(c,'優先監控名單：37 人',W/2,byy+70,20,'#FFB547','center');mono(c,'等待人工審核',W/2,byy+94,14,`rgb(${CY})`,'center');c.globalAlpha=1}}
+  /* 掃描紋 */
+  c.fillStyle='rgba(0,0,0,.12)';for(let y=0;y<H;y+=3)c.fillRect(0,y,W,1)}
+/* —— 審核 —— */
+function startReview(){AI.phase='review';cancelAnimationFrame(AI.raf);aiSec('aiReview');$('mAI').scrollTop=0;AI.dec={};AI.rvT=60;AI.rvStart=performance.now();AI.done=false;
+  $('rvList').innerHTML=PEOPLE.map(p=>`<div class="pc" data-i="${p.id}"><div class="top1" role="button" tabindex="0" aria-label="${p.n}，展開依據"><div class="sil">${SIL}</div><div class="nm"><b>${p.n}</b><span>${p.r}</span></div><div class="st"></div><div class="sc"><b class="mono">${p.s}</b><i><em style="width:${p.s}%"></em></i></div></div><div class="ev">${p.ev}<br><span style="color:#7f9aa5">${p.h}</span></div><div class="acts"><button type="button" class="ok">確認</button><button type="button" class="no">剔除</button></div></div>`).join('');
+  $('rvList').querySelectorAll('.pc').forEach(el=>{const id=+el.dataset.i;
+    const tog=()=>{if(!el.classList.contains('done'))el.classList.toggle('open')};el.querySelector('.top1').onclick=tog;el.querySelector('.top1').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tog()}};
+    el.querySelector('.ok').onclick=()=>decide(id,1);el.querySelector('.no').onclick=()=>decide(id,0)});
+  updReview();tickReview()}
+function decide(id,v){if(AI.done||AI.dec[id]!=null)return;AI.dec[id]={v,auto:false};const el=document.querySelector(`.pc[data-i="${id}"]`);el.classList.remove('open');el.classList.add('done',v?'y':'n');el.querySelector('.st').textContent=v?'已確認':'已剔除';updReview()}
+function updReview(){const n=Object.keys(AI.dec).length;$('rvProg').textContent=`已審核 ${n}／${PEOPLE.length}`;if(n===PEOPLE.length)finishReview()}
+function tickReview(){if(AI.phase!=='review'||AI.done)return;AI.rvT=Math.max(0,60-(performance.now()-AI.rvStart)/1000);const tm=$('rvTimer');tm.textContent=Math.ceil(AI.rvT);tm.classList.toggle('low',AI.rvT<=10);
+  if(AI.rvT<=0){finishReview();return}setTimeout(tickReview,200)}
+function finishReview(){if(AI.done)return;AI.done=true;AI.phase='reveal';AI.rvUsed=Math.min(60,(performance.now()-AI.rvStart)/1000);
+  AI.manual=PEOPLE.filter(p=>AI.dec[p.id]&&!AI.dec[p.id].bulk).length;PEOPLE.forEach(p=>{if(AI.dec[p.id]==null)AI.dec[p.id]={v:1,auto:true}});setTimeout(showReveal,500)}
+function showReveal(){aiSec('aiReveal');$('mAI').scrollTop=0;
+  const sent=PEOPLE.filter(p=>AI.dec[p.id].v),auto=PEOPLE.filter(p=>AI.dec[p.id].auto||AI.dec[p.id].bulk).length,wrong=sent.filter(p=>!p.y),stopped=PEOPLE.filter(p=>!p.y&&!AI.dec[p.id].v).length;
+  const avg=AI.manual?(AI.rvUsed/AI.manual):AI.rvUsed;
+  $('rvStats').innerHTML=`<div>送出名單<b class="mono">${sent.length} 人</b></div><div>其中沒有逐一審核就送出<b class="mono">${auto} 人</b></div><div>名單上不是軍人的<b class="mono" style="color:var(--amber)">${wrong.length} 人</b></div><div>你平均每人審核<b class="mono">${avg.toFixed(1)} 秒</b></div>`;
+  $('rvWho').innerHTML=wrong.length?`<p class="m">你認得出這些人，因為你剛剛親手看過他們的留言。系統不認得。</p>`+wrong.map(p=>`<div class="who"><b>${p.n}　<span class="mono" style="color:var(--cyan);font-size:15px">分數 ${p.s}</span>${AI.dec[p.id].auto?'<span style="font-size:13px;color:#9ab;margin-left:6px">系統自動送出</span>':AI.dec[p.id].bulk?'<span style="font-size:13px;color:#9ab;margin-left:6px">一鍵確認</span>':''}</b><div class="why">AI 的理由：${p.r}</div><div class="real">其實是：${p.real}</div></div>`).join(''):`<p class="m">名單上的 15 個誤判，你全部攔下來了。但你得把 37 個人一個一個看完，這正是交給 AI 想省下的時間。</p>`;
+  $('rvStop').textContent=stopped&&wrong.length?`你攔下了 ${stopped} 個誤判。`:''}
+function aiFinish(){$('mAI').classList.remove('on');AI.phase='';endGame()}
+$('aiStart').onclick=startAnim;$('aiSkip').onclick=()=>{AI.t=16.3};$('aiGo').onclick=startReview;
+$('rvAll').onclick=()=>{if(AI.done)return;AI.manual0=Object.keys(AI.dec).length;PEOPLE.forEach(p=>{if(AI.dec[p.id]==null){AI.dec[p.id]={v:1,auto:false,bulk:true}}});finishReview()};
+$('aiEnd').onclick=aiFinish;
+
+/* ═══ 結算 ═══ */
+function result(timeout){const sc=SCENES[S.i],n=nFound(),all=sc.clues.length;S.total+=n;S.results.push({n,all});
+  if(timeout){S.missedShow=true;const firstMissing=sc.clues.find(c=>!c.dom&&!S.found[c.id]);if(firstMissing&&firstMissing.p!==P)setPhoto(firstMissing.p);sc.clues.forEach(cl=>{if(!S.found[cl.id]&&cl.dom)document.querySelectorAll(`#post .clue[data-c="${cl.id}"]`).forEach(el=>el.classList.add('missed'))})}
+  const list=sc.clues.map(cl=>`<div class="${S.found[cl.id]?'ok':'no'}"><b>${S.found[cl.id]?'找到':'沒找到'}：${cl.t}</b>${cl.e}</div>`).join('');
+  const nd=Object.keys(S.dec).length,decLine=sc.decoys.length?`<p class="m" style="font-size:15px">你也查過 ${nd} 個看起來可疑、其實沒用的資訊。分辨哪些資訊有價值，正是分析員的工作。</p>`:'';
+  const last=S.i===SCENES.length-1;let head;
+  if(sc.own)head=`<div class="lbl">第 ${S.i+1} 則・你的貼文</div><h1>${n===all?'發布前，先改掉這些地方':'還有地方沒改到'}</h1><p class="m">裁掉雷達罩和告示牌，不要拍到螢幕和臂章，刪掉地點標籤，關掉位置分享。夕陽一樣漂亮，但對方什麼也查不到。</p>`;
+  else head=`<div class="lbl">第 ${S.i+1} 則・分析結果</div><h1 style="color:${n===all?'var(--red)':'var(--amber)'}">${n===all?'位置確認':timeout?'時間到':'範圍縮小'}</h1><p class="m">${n===all?`${all} 個線索交叉比對，${sc.map.ranges[all]}。`:`你找到 ${n} 個線索，可能範圍還是${sc.map.ranges[n]}。`}</p>`;
+  setTimeout(()=>{S.missedShow=false;$('mResult').innerHTML=head+`<canvas id="bigmap"></canvas><div class="clist">${list}</div>${decLine}<button type="button" class="btn" id="nextBtn">${last?'下一步':'下一則'}</button>`;$('mResult').classList.add('on');$('mResult').scrollTop=0;
+    const bm=$('bigmap'),dpr=Math.min(devicePixelRatio||1,2),w=bm.clientWidth,h=bm.clientHeight;bm.width=w*dpr;bm.height=h*dpr;const bx=bm.getContext('2d');bx.setTransform(dpr,0,0,dpr,0,0);drawMap(bx,w,h,sc,n,true);
+    $('nextBtn').onclick=()=>{$('mResult').classList.remove('on');if(last)startAI();else loadPost(S.i+1)}},timeout?1800:0)}
+function endGame(){S.state='end';const tot=SCENES.reduce((a,s)=>a+s.clues.length,0);
+  const rank=S.total>=tot*0.85?'資深分析員':S.total>=tot*0.6?'分析員':'見習分析員';
+  $('mEnd').innerHTML=`<div class="lbl">任務總結</div><h1>${rank}</h1>
+  <div class="stat"><div>找到的線索<b class="mono">${S.total}／${tot}</b></div><div>確認位置的貼文<b class="mono">${S.results.slice(0,SCENES.length-1).filter(r=>r.n===r.all).length}／${SCENES.length-1}</b></div></div>
+  <h2>你找得到，對方也找得到</h2>
+  <p class="m">剛剛的每一個線索，都是發文的人或朋友自己公開的。發文前，用三個問題檢查一次：</p>
+  <div class="rules"><div><b>背景：</b>照片裡有沒有路牌、招牌、地標、山形、文件，或是裝備和設施？</div><div><b>文字：</b>貼文和留言有沒有透露部隊、駐地、行程或移動？</div><div><b>設定：</b>打卡、定位、照片座標、標籤、運動紀錄是不是設成公開？</div></div>
+  <h2>真實發生過</h2>
+  <div class="case"><b>2018 年・運動紀錄熱度圖</b><br>一款運動紀錄軟體公開了全球使用者的熱度圖。一名澳洲大學生發現，在敘利亞、阿富汗等人煙稀少的地區，亮起的跑步路線正好畫出了軍事基地。原因是軍人把跑步紀錄設成了公開。</div>
+  <div class="case"><b>2014 年・飛彈發射車的行蹤</b><br>馬航 MH17 客機被擊落後，調查團體比對沿途居民上傳的照片與影片，一路追蹤一輛飛彈發射車的移動路線，最後追回它所屬的部隊。</div>
+  <div class="case"><b>2023 年・馬基耶夫卡</b><br>烏克蘭飛彈擊中俄軍在馬基耶夫卡的臨時營舍，俄方承認至少 89 人死亡。俄國國防部自己的說法，是士兵違規大量使用手機，讓對方定位了他們的位置。</div>
+  <button type="button" class="btn" id="againBtn">再玩一次</button>`;
+  $('mEnd').classList.add('on');$('mEnd').scrollTop=0;$('againBtn').onclick=()=>{$('mEnd').classList.remove('on');S={i:0,t:0,found:{},dec:{},wrong:[],state:'start',total:0,results:[],decTotal:0,spent:0};loadPost(0)}}
+$('startBtn').onclick=()=>{$('mStart').classList.remove('on');loadPost(0)};
+
+window.__leak={startAI,startAnim,startReview,decide,finishReview,AI,PEOPLE,get S(){return S},SCENES,get P(){return P},setPhoto,tap(x,y){photoTap(x,y)}};
+loadPost(0);S.state='start';
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
